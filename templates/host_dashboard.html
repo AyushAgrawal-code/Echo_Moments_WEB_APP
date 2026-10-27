@@ -1,0 +1,241 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Host Dashboard - EchoMoments</title>
+    <link rel="stylesheet" href="{% static 'css/css.css' %}">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <a href="#" class="logo">
+                    <div class="logo-icon">E</div>
+                    EchoMoments
+                </a>
+                <nav class="nav">
+                    <a href="#" class="active">Dashboard</a>
+                    <a href="centralized-album.html">View Album</a>
+                    <a href="#" onclick="endEvent()">End Event</a>
+                    <button class="echo-button-primary" onclick="signOut()">Sign Out</button>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Event Info Section -->
+    <section class="page-header">
+        <div class="container">
+            <div class="event-info">
+                <h1 class="page-title" style="color: white; margin-bottom: 0;">Wedding Reception</h1>
+                <p class="page-subtitle" style="color: rgba(255,255,255,0.8);">Share your beautiful moments with everyone</p>
+                <div class="event-code" id="eventCode">ABC123</div>
+                <p style="margin-top: 1rem; opacity: 0.9;">Share this code with your guests so they can upload photos</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Overview -->
+    <section class="container">
+        <div class="stats-grid">
+            <div class="stat-card">
+                <span class="stat-number" id="totalPhotos">24</span>
+                <span class="stat-label">Total Photos</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number" id="totalGuests">8</span>
+                <span class="stat-label">Active Guests</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number" id="recentUploads">3</span>
+                <span class="stat-label">Recent Uploads</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number" id="eventDuration">2h 15m</span>
+                <span class="stat-label">Event Duration</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Dashboard -->
+    <main class="container">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 2rem; margin-bottom: 3rem;">
+            
+            <!-- Upload Management Card -->
+            <div class="echo-card">
+                <div class="card-header">
+                    <h3 class="card-title">Upload Management</h3>
+                    <p class="card-description">Manage photo uploads for your event</p>
+                </div>
+                <div class="card-content">
+                    <div class="upload-area" onclick="document.getElementById('hostFileInput').click()">
+                        <div class="upload-icon">📷</div>
+                        <h4>Upload Photos as Host</h4>
+                        <p>Add photos to your event album</p>
+                    </div>
+                    <input type="file" id="hostFileInput" multiple accept="image/*" style="display: none;" onchange="handleHostUpload(this)">
+                </div>
+                <div class="card-footer">
+                    <button class="echo-button-outline" onclick="toggleUploads()">
+                        <span id="uploadStatus">Disable Uploads</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Guest Photos Card -->
+            <div class="echo-card">
+                <div class="card-header">
+                    <h3 class="card-title">Guest Photos</h3>
+                    <p class="card-description">Photos uploaded by your guests</p>
+                </div>
+                <div class="card-content">
+                    <div id="guestPhotosList">
+                        <div class="guest-photo-item" style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; border: 1px solid var(--echo-border); border-radius: 0.5rem; margin-bottom: 0.5rem;">
+                            <div>
+                                <strong>Sarah Johnson</strong>
+                                <span style="color: #6B7280; margin-left: 0.5rem;">4 photos</span>
+                            </div>
+                            <button class="echo-button-ghost" onclick="viewGuestPhotos('sarah')">View</button>
+                        </div>
+                        <div class="guest-photo-item" style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; border: 1px solid var(--echo-border); border-radius: 0.5rem; margin-bottom: 0.5rem;">
+                            <div>
+                                <strong>Mike Chen</strong>
+                                <span style="color: #6B7280; margin-left: 0.5rem;">7 photos</span>
+                            </div>
+                            <button class="echo-button-ghost" onclick="viewGuestPhotos('mike')">View</button>
+                        </div>
+                        <div class="guest-photo-item" style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; border: 1px solid var(--echo-border); border-radius: 0.5rem; margin-bottom: 0.5rem;">
+                            <div>
+                                <strong>Emily Davis</strong>
+                                <span style="color: #6B7280; margin-left: 0.5rem;">2 photos</span>
+                            </div>
+                            <button class="echo-button-ghost" onclick="viewGuestPhotos('emily')">View</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button class="echo-button-primary" onclick="window.location.href='centralized-album.html'">
+                        View All Photos
+                    </button>
+                </div>
+            </div>
+
+            <!-- Guest Management Card -->
+            <div class="echo-card">
+                <div class="card-header">
+                    <h3 class="card-title">Guest Management</h3>
+                    <p class="card-description">Manage event participants</p>
+                </div>
+                <div class="card-content">
+                    <div id="guestList">
+                        <div class="guest-item" style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; border: 1px solid var(--echo-border); border-radius: 0.5rem; margin-bottom: 0.5rem;">
+                            <div>
+                                <strong>Sarah Johnson</strong>
+                                <span style="color: #10B981; margin-left: 0.5rem;">● Online</span>
+                            </div>
+                            <div style="display: flex; gap: 0.5rem;">
+                                <button class="echo-button-ghost" onclick="removeGuest('sarah')">Remove</button>
+                            </div>
+                        </div>
+                        <div class="guest-item" style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; border: 1px solid var(--echo-border); border-radius: 0.5rem; margin-bottom: 0.5rem;">
+                            <div>
+                                <strong>Mike Chen</strong>
+                                <span style="color: #10B981; margin-left: 0.5rem;">● Online</span>
+                            </div>
+                            <div style="display: flex; gap: 0.5rem;">
+                                <button class="echo-button-ghost" onclick="removeGuest('mike')">Remove</button>
+                            </div>
+                        </div>
+                        <div class="guest-item" style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; border: 1px solid var(--echo-border); border-radius: 0.5rem; margin-bottom: 0.5rem;">
+                            <div>
+                                <strong>Emily Davis</strong>
+                                <span style="color: #6B7280; margin-left: 0.5rem;">● Offline</span>
+                            </div>
+                            <div style="display: flex; gap: 0.5rem;">
+                                <button class="echo-button-ghost" onclick="removeGuest('emily')">Remove</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button class="echo-button-outline" onclick="inviteGuests()">
+                        Invite More Guests
+                    </button>
+                </div>
+            </div>
+
+            <!-- Event Settings Card -->
+            <div class="echo-card">
+                <div class="card-header">
+                    <h3 class="card-title">Event Settings</h3>
+                    <p class="card-description">Configure your event preferences</p>
+                </div>
+                <div class="card-content">
+                    <div class="form-group">
+                        <label class="form-label">Upload Limit per Guest</label>
+                        <select class="form-select" id="uploadLimit">
+                            <option value="10">10 photos</option>
+                            <option value="25" selected>25 photos</option>
+                            <option value="50">50 photos</option>
+                            <option value="unlimited">Unlimited</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Auto-approve uploads</label>
+                        <select class="form-select" id="autoApprove">
+                            <option value="true" selected>Yes</option>
+                            <option value="false">No (Manual approval)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button class="echo-button-primary" onclick="saveSettings()">
+                        Save Settings
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="echo-card">
+            <div class="card-header">
+                <h3 class="card-title">Quick Actions</h3>
+                <p class="card-description">Manage your event efficiently</p>
+            </div>
+            <div class="card-content">
+                <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                    <button class="echo-button-primary" onclick="downloadAllPhotos()">
+                        📥 Download All Photos
+                    </button>
+                    <button class="echo-button-outline" onclick="shareEventLink()">
+                        🔗 Share Event Link
+                    </button>
+                    <button class="echo-button-outline" onclick="generateQRCode()">
+                        📱 Generate QR Code
+                    </button>
+                    <button class="echo-button-ghost" onclick="exportGuestList()">
+                        📊 Export Guest List
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modals -->
+    <div id="guestPhotosModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modalGuestName">Guest Photos</h3>
+                <button class="modal-close" onclick="closeModal('guestPhotosModal')">&times;</button>
+            </div>
+            <div id="modalPhotoGrid" class="photo-grid"></div>
+        </div>
+    </div>
+
+    <script src="scripts/host-dashboard.js"></script>
+</body>
+</html>

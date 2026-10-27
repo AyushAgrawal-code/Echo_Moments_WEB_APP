@@ -1,0 +1,157 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}{% endblock title %}</title>
+    <meta name="description" content="The modern way to collect, organize, and share photos from your special events with event albums and QR code access." />
+    <meta name="author" content="EchoMoments" />
+
+    <meta property="og:title" content="EchoMoments" />
+    <meta property="og:description" content="Capture & Share Your Event Memories" />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@echo_moments" />
+    <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+
+    {% block extra_css %}{% endblock extra_css %}
+
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  </head>
+
+  <body>
+    <div id="root">
+      <!-- Navigation -->
+      <nav class="navbar">
+        <div class="echo-container navbar-container">
+          <div class="logo">
+            <div class="logo-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M9 22H15C20 22 22 20 22 15V9C22 4 20 2 15 2H9C4 2 2 4 2 9V15C2 20 4 22 9 22Z" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M9 10C10.1046 10 11 9.10457 11 8C11 6.89543 10.1046 6 9 6C7.89543 6 7 6.89543 7 8C7 9.10457 7.89543 10 9 10Z" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M2.67 18.95L7.6 15.64C8.39 15.11 9.53 15.17 10.24 15.78L10.57 16.07C11.35 16.74 12.61 16.74 13.39 16.07L17.55 12.5C18.33 11.83 19.59 11.83 20.37 12.5L22 13.9" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <span class="logo-text">EchoMoments</span>
+          </div>
+          
+          <!-- Desktop Navigation -->
+          <div class="desktop-nav">
+            <a href="{% if user.is_authenticated %}{% url 'accounts:dashboard' %}{% else %}{% url 'home:index' %}{% endif %}" class="nav-link">Home</a>
+            <a href="{% if user.is_authenticated %}{% url 'events:join_event' %}{% else %}{% url 'accounts:login' %}{% endif %}" class="nav-link">Join Event</a>
+            <a href="{% if user.is_authenticated %}{% url 'accounts:dashboard' %}{% else %}{% url 'accounts:login' %}{% endif %}" class="nav-link">My Albums</a>
+            <a href="{% if user.is_authenticated %}{% url 'events:create_event' %}{% else %}{% url 'accounts:login' %}{% endif %}" class="nav-link">Host an Event</a>
+            {% if user.is_authenticated %}<a href="{% url 'accounts:profile' %}" class="nav-link">Profile</a>{% endif %}
+
+            {% comment %} <button class="echo-button-primary signin-btn" >LogOut</button> {% endcomment %}
+            {% if user.is_authenticated %}<form action="{% url 'accounts:logout' %}" method="post" style="display:inline;">
+             {% csrf_token %}
+             <button type="submit" class="echo-button-primary echo-button-danger">Sign Out</button>
+             </form>{% else %}<a href="{% url 'accounts:login' %}" class="echo-button-primary">Sign In</a>{% endif %}
+           </div>
+          
+          <!-- Mobile Menu Button -->
+          <button class="mobile-menu-button" aria-label="Open menu">
+            <i class="fas fa-bars" id="menu-icon"></i>
+          </button>
+        </div>
+        
+        <!-- Mobile Navigation -->
+        <div class="mobile-nav" id="mobileNav">
+          <div class="echo-container mobile-nav-container">
+            <a href="{% if user.is_authenticated %}{% url 'accounts:dashboard' %}{% else %}{% url 'home:index' %}{% endif %}" class="nav-link">Home</a>
+            <a href="{% if user.is_authenticated %}{% url 'events:join_event' %}{% else %}{% url 'accounts:login' %}{% endif %}" class="nav-link">Join Event</a>
+            <a href="{% if user.is_authenticated %}{% url 'accounts:dashboard' %}{% else %}{% url 'accounts:login' %}{% endif %}" class="nav-link">My Albums</a>
+            <a href="{% if user.is_authenticated %}{% url 'events:create_event' %}{% else %}{% url 'accounts:login' %}{% endif %}" class="nav-link">Host an Event</a>
+            {% comment %} <button class="echo-button-primary full-width signin-btn">Sign In</button> {% endcomment %}
+           {% if user.is_authenticated %}<form action="{% url 'accounts:logout' %}" method="post" style="display:inline;" >
+            {% csrf_token %}
+            <button type="submit" class="echo-button-primary echo-button-danger">Sign Out</button>
+           </form>{% else %}<a href="{% url 'accounts:login' %}" class="echo-button-primary">Sign In</a>{% endif %}
+          </div>
+        </div>
+      </nav>
+      {% if messages %}
+      {% for message in messages %}
+         <div class="alert alert-{{ message.tags }} alert-dismissible fade show my-0" role="alert">
+         {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+         </div>
+      {% endfor %}
+      {% endif %}
+
+{% block body %}{% endblock body %}
+     
+      <!-- Footer -->
+      <footer class="footer">
+        <div class="echo-container">
+          <div class="footer-grid">
+            <div class="footer-about">
+              <div class="logo">
+                <div class="logo-icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M9 22H15C20 22 22 20 22 15V9C22 4 20 2 15 2H9C4 2 2 4 2 9V15C2 20 4 22 9 22Z" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M9 10C10.1046 10 11 9.10457 11 8C11 6.89543 10.1046 6 9 6C7.89543 6 7 6.89543 7 8C7 9.10457 7.89543 10 9 10Z" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M2.67 18.95L7.6 15.64C8.39 15.11 9.53 15.17 10.24 15.78L10.57 16.07C11.35 16.74 12.61 16.74 13.39 16.07L17.55 12.5C18.33 11.83 19.59 11.83 20.37 12.5L22 13.9" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </div>
+                <span class="logo-text">EchoMoments</span>
+              </div>
+              <p>EchoMoments helps you capture, organize and share photos from your special events with event albums and QR code access.</p>
+            </div>
+            
+            <div class="footer-links">
+              <h4>Features</h4>
+              <ul>
+                <li><a href="{% url 'events:join_event' %}">Join Event</a></li>
+                <li><a href="{% url 'accounts:dashboard' %}">My Albums</a></li>
+                <li><a href="{% url 'events:create_event' %}">Host an Event</a></li>
+                <li><a href="{% url 'events:join_event' %}">Upload Photos</a></li>
+              </ul>
+            </div>
+            
+            <div class="footer-links"><h4>Account</h4><ul><li><a href="{% url 'accounts:profile' %}">Profile settings</a></li><li><a href="{% url 'accounts:dashboard' %}">Dashboard</a></li></ul></div>
+          </div>
+          
+          <div class="footer-bottom">
+            <p>&copy; <span id="currentYear"></span> EchoMoments. All rights reserved.</p>
+            <div class="social-links">
+              <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+              <a href="https://www.instagram.com/echomoments.in/" aria-label="Instagram" target = "blank"><i class="fab fa-instagram"></i></a>
+              <a href="#" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+            </div>
+          </div>
+        </div>
+      </footer>
+    </div>
+
+    <!-- Event code modal -->
+    <div class="modal" id="eventCodeModal">
+      <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <h3>Enter Event Code</h3>
+        <p>Please enter the event code provided by the host:</p>
+        <input type="text" class="event-code-input" placeholder="Event code">
+        <button class="echo-button-primary">Join Event</button>
+      </div>
+    </div>
+
+    <!-- Toast notification container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+   <script src="{% static 'js/main.js' %}"></script>
+   <script src="{% static 'js/host.js' %}"></script>
+
+{% block extra_js %}
+  {{ block.super }}
+{% endblock %}
+
+
+  </body>
+</html>
+

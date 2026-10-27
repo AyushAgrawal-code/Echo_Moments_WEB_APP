@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Scan QR - Join Event{% endblock %}
+{% block extra_css %}<style>#preview{width:100%;max-height:55vh;border-radius:10px;margin-top:1rem;background:#111}</style>{% endblock %}
+{% block body %}
+<main class="main-content"><div class="container"><div class="echo-card" style="max-width:540px;margin:auto;text-align:center"><div class="card-header"><h2>Join an Event</h2><p>Start your camera to scan a QR code, or enter its event code below.</p></div><button id="startScan" class="echo-button-primary" type="button">Start camera scan</button><video id="preview" playsinline muted hidden></video><p id="status" role="status"></p><form method="post" action="{% url 'events:join_event' %}" style="padding:1rem">{% csrf_token %}<label for="eventCode">Event code</label><input id="eventCode" type="text" name="event_code" value="{{ request.GET.event_code }}" autocomplete="off" required><button class="echo-button-outline" type="submit">Join with code</button></form></div></div></main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/instascan/1.0.0/instascan.min.js"></script><script>
+const startButton=document.getElementById('startScan'),status=document.getElementById('status'),video=document.getElementById('preview');let scanner=null;
+startButton.addEventListener('click',async()=>{startButton.disabled=true;video.hidden=false;status.textContent='Requesting camera access…';try{if(!window.Instascan)throw Error('QR scanner library is unavailable. Enter the code manually.');scanner=new Instascan.Scanner({video});scanner.addListener('scan',content=>{try{const parsed=new URL(content,location.origin);if(parsed.origin===location.origin&&parsed.pathname.includes('/events/join/')){location.assign(parsed.href);return}}catch{}document.getElementById('eventCode').value=content.trim().toUpperCase();status.textContent='Code detected. Press Join with code.';scanner.stop()});const cameras=await Instascan.Camera.getCameras();if(!cameras.length)throw Error('No camera was found. Enter the event code manually.');await scanner.start(cameras[0]);status.textContent='Camera active. Point it at the event QR code.'}catch(error){status.textContent=error.message;startButton.disabled=false;video.hidden=true;if(scanner){try{scanner.stop()}catch{}}}});
+</script>
+{% endblock %}

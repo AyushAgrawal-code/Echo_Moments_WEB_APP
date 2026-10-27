@@ -1,0 +1,342 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>EchoMoments-login</title>
+    <meta name="description" content="Collect, organize, and share photographs from your special events with event albums and QR code access." />
+    <meta name="author" content="EchoMoments" />
+
+    <meta property="og:title" content="EchoMoments" />
+    <meta property="og:description" content="Capture & Share Your Event Memories" />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@echo_moments" />
+    <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+
+    <!-- {% block extra_css %}{% endblock extra_css %} -->
+
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <link rel="stylesheet" href="{% static 'css/login.css' %}">
+
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  </head>
+
+  <body>
+    <div id="root">
+      <!-- Navigation -->
+      <nav class="navbar">
+        <div class="echo-container navbar-container">
+          <div class="logo">
+            <div class="logo-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M9 22H15C20 22 22 20 22 15V9C22 4 20 2 15 2H9C4 2 2 4 2 9V15C2 20 4 22 9 22Z" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M9 10C10.1046 10 11 9.10457 11 8C11 6.89543 10.1046 6 9 6C7.89543 6 7 6.89543 7 8C7 9.10457 7.89543 10 9 10Z" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M2.67 18.95L7.6 15.64C8.39 15.11 9.53 15.17 10.24 15.78L10.57 16.07C11.35 16.74 12.61 16.74 13.39 16.07L17.55 12.5C18.33 11.83 19.59 11.83 20.37 12.5L22 13.9" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <span class="logo-text">EchoMoments</span>
+          </div>
+          
+          <!-- Desktop Navigation -->
+          <div class="desktop-nav">
+            <a href="{% url 'home' %}" class="nav-link">Home</a>
+            <a href="{% url 'events:join_event' %}" class="nav-link">Join Event</a>
+            {% comment %} <a href="{% url 'album' %}" class="nav-link">My Albums</a>
+            <a href="{% url 'host' %}" class="nav-link">Host an Event</a>
+            <form action="{% url 'logout' %}" method="post" style="display:inline;">
+             {% csrf_token %}
+             <button type="submit" class="echo-button-primary echo-button-danger">Logout</button>
+             </form> {% endcomment %}
+           </div>
+          
+          <!-- Mobile Menu Button -->
+          <button class="mobile-menu-button" aria-label="Open menu">
+            <i class="fas fa-bars" id="menu-icon"></i>
+          </button>
+        </div>
+        
+        <!-- Mobile Navigation -->
+        <div class="mobile-nav" id="mobileNav">
+          <div class="echo-container mobile-nav-container">
+            <a href="{% url 'home' %}" class="nav-link">Home</a>
+            <a href="{% url 'events:join_event' %}" class="nav-link">Join Event</a>
+            <!-- <a href="{% url 'album' %}" class="nav-link">My Albums</a> -->
+            <!-- <a href="{% url 'host' %}" class="nav-link">Host an Event</a> -->
+            <!-- {% comment %} <button class="echo-button-primary full-width signin-btn">Sign In</button> {% endcomment %} -->
+           <!-- <form action="{% url 'logout' %}" method="post" style="display:inline;"> -->
+            <!-- {% csrf_token %}
+            <button type="submit" class="echo-button-primary echo-button-danger">Logout</button>
+           </form> -->
+          </div>
+        </div>
+      </nav>
+      {% if messages %}
+      {% for message in messages %}
+         <div class="alert alert-{{ message.tags }} alert-dismissible fade show my-0" role="alert">
+         {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+         </div>
+      {% endfor %}
+      {% endif %}
+ <!-- {% block body %} -->
+
+
+  <!-- Auth Container -->
+  <div class="auth-container">
+    <div class="auth-box">
+      <div class="auth-sides-container">
+        <!-- Left Side - Form -->
+        <div class="auth-form-side">
+          <div class="auth-forms-container">
+            <!-- Login Form -->
+            <div class="auth-form-panel active" id="login-panel">
+              <div class="auth-form-header">
+                <h2>Welcome Back</h2>
+                <p>Log in to continue your journey with EchoMoments</p>
+              </div>
+              <form class="auth-form" method="POST" action="">
+                {% csrf_token %}
+                     <input type="hidden" name="form_type" value="login">
+                <div class="form-group">
+                  <label for="login-email">Email</label>
+                  <div class="input-with-icon">
+                    <i class="fa-regular fa-envelope"></i>
+                    <input type="email" id="login-email" name="login-email" required placeholder="Your email address">
+                  </div>
+                </div>
+                <div class="form-group">
+                  <div class="password-label-row">
+                    <label for="login-password">Password</label>
+                    <a href="#" class="forgot-password">Forgot password?</a>
+                  </div>
+                  <div class="input-with-icon">
+                    <i class="fa-regular fa-lock"></i>
+                    <input type="password" id="login-password" name="login-password" required placeholder="Your password">
+                    <button type="button" class="toggle-password">
+                      <i class="fa-regular fa-eye" ></i>
+                    </button>
+                  </div>
+                </div>
+                <div class="form-group remember-me">
+                  <label class="checkbox-container">
+                    <input type="checkbox" id="remember">
+                    <span class="checkmark"></span>
+                    Remember me
+                  </label>
+                </div>
+                <button type="submit" class="echo-button echo-button-primary full-width">Log In</button>
+                
+                <div class="social-auth">
+                  <div class="social-auth-divider">
+                    <span>or continue with</span>
+                  </div>
+                  <div class="social-buttons">
+                    <button type="button" class="social-button">
+                      <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/google/google-original.svg" alt="Google">
+                      Google
+                    </button>
+                    <button type="button" class="social-button">
+                      <i class="fa-brands fa-facebook"></i>
+                      Facebook
+                    </button>
+                  </div>
+                </div>
+                
+                <div class="auth-form-footer">
+                  <p>Don't have an account? <a href="#" class="switch-auth-mode" data-target="signup">Sign up</a></p>
+                </div>
+              </form>
+            </div>
+            
+            <!-- Signup Form -->
+            <div class="auth-form-panel" id="signup-panel">
+              <div class="auth-form-header">
+                <h2>Create Account</h2>
+                <p>Join EchoMoments to start sharing your memories</p>
+              </div>
+             <form class="auth-form" method="POST" action="">
+               {% csrf_token %}
+                    <input type="hidden" name="form_type" value="signup">
+                <div class="form-group">
+                  <label for="signup-name">Full Name</label>
+                  <div class="input-with-icon">
+                    <i class="fa-regular fa-user"></i>
+                    <input type="text" id="signup-name" name="signup-name" required placeholder="Your full name">
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label for="signup-email">Email</label>
+                  <div class="input-with-icon">
+                    <i class="fa-regular fa-envelope"></i>
+                    <input type="email" id="signup-email" name="signup-email" required placeholder="Your email address">
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label for="signup-password">Password</label>
+                  <div class="input-with-icon">
+                    <i class="fa-regular fa-lock"></i>
+                    <input type="password" id="signup-password" name="signup-password" required placeholder="Create a password">
+                    <button type="button" class="toggle-password">
+                      <i class="fa-regular fa-eye"></i>
+                    </button>
+                  </div>
+                  <div class="password-strength">
+                    <div class="strength-bar">
+                      <div class="strength-progress" style="width: 0%"></div>
+                    </div>
+                    <span class="strength-text">Password strength</span>
+                  </div>
+                </div>
+                <div class="form-group terms">
+                  <label class="checkbox-container">
+                    <input type="checkbox" id="terms" required>
+                    <span class="checkmark"></span>
+                    I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>
+                  </label>
+                </div>
+                
+                <button type="submit" class="echo-button echo-button-primary full-width">Create Account</button>
+                
+                <div class="social-auth">
+                  <div class="social-auth-divider">
+                    <span>or sign up with</span>
+                  </div>
+                  <div class="social-buttons">
+                    <button type="button" class="social-button">
+                      <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/google/google-original.svg" alt="Google">
+                      Google
+                    </button>
+                    <button type="button" class="social-button">
+                      <i class="fa-brands fa-facebook"></i>
+                      Facebook
+                    </button>
+                  </div>
+                </div>
+                
+                <div class="auth-form-footer">
+                  <p>Already have an account? <a href="#" class="switch-auth-mode" data-target="login">Log in</a></p>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Right Side - Image -->
+        <div class="auth-image-side">
+          <div class="auth-image-content">
+            <div class="auth-image-overlay"></div>
+            <div class="auth-image-text">
+              <div class="logo">
+                <div class="logo-icon">
+                  <i class="fa-solid fa-images"></i>
+                </div>
+                <div class="logo-text">EchoMoments</div>
+              </div>
+              <h2>Share Your Memories</h2>
+              <p>Create and explore beautiful photo collections with friends and family</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+     {% block extra_js %}
+<script src="{% static 'js/auth.js' %}" defer></script>
+{% endblock %}
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const togglePasswordButtons = document.querySelectorAll('.toggle-password');
+
+    togglePasswordButtons.forEach(button => {
+      button.addEventListener('click', function () {
+        const input = this.parentNode.querySelector('input[type="password"], input[type="text"]');
+        const icon = this.querySelector('i');
+
+        const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
+        input.setAttribute('type', type);
+
+        icon.classList.toggle('fa-eye');
+        icon.classList.toggle('fa-eye-slash');
+      });
+    });
+  });
+</script>
+
+
+    <!-- {% endblock body %} -->
+           <!-- Footer -->
+      <footer class="footer">
+        <div class="echo-container">
+          <div class="footer-grid">
+            <div class="footer-about">
+              <div class="logo">
+                <div class="logo-icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M9 22H15C20 22 22 20 22 15V9C22 4 20 2 15 2H9C4 2 2 4 2 9V15C2 20 4 22 9 22Z" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M9 10C10.1046 10 11 9.10457 11 8C11 6.89543 10.1046 6 9 6C7.89543 6 7 6.89543 7 8C7 9.10457 7.89543 10 9 10Z" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M2.67 18.95L7.6 15.64C8.39 15.11 9.53 15.17 10.24 15.78L10.57 16.07C11.35 16.74 12.61 16.74 13.39 16.07L17.55 12.5C18.33 11.83 19.59 11.83 20.37 12.5L22 13.9" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </div>
+                <span class="logo-text">EchoMoments</span>
+              </div>
+              <p>EchoMoments helps you capture, organize and share photos from your special events in event albums with QR code access.</p>
+            </div>
+            
+            <div class="footer-links">
+              <h4>Features</h4>
+              <ul>
+                <li><a href="{% url 'events:join_event' %}">Join Event</a></li>
+                {% comment %} <li><a href="{% url 'album' %}">My Albums</a></li> {% endcomment %}
+                <li><a href="{% url 'host' %}">Host an Event</a></li>
+                {% comment %} <li><a href="#">Upload Photos</a></li> {% endcomment %}
+              </ul>
+            </div>
+            
+            <div class="footer-links">
+              <h4>Company</h4>
+              <ul>
+                <li><a href="#">About Us</a></li>
+                <li><a href="#">Privacy Policy</a></li>
+                <li><a href="#">Terms of Service</a></li>
+                <li><a href="#">Contact Us</a></li>
+              </ul>
+            </div>
+          </div>
+          
+          <div class="footer-bottom">
+            <p>&copy; <span id="currentYear"></span> EchoMoments. All rights reserved.</p>
+            <div class="social-links">
+              <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+              <a href="https://www.instagram.com/echomoments.in/" aria-label="Instagram" target = "blank"><i class="fab fa-instagram"></i></a>
+              <a href="#" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+            </div>
+          </div>
+        </div>
+      </footer>
+    </div>
+
+    <!-- Event code modal -->
+    <div class="modal" id="eventCodeModal">
+      <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <h3>Enter Event Code</h3>
+        <p>Please enter the event code provided by the host:</p>
+        <input type="text" class="event-code-input" placeholder="Event code">
+        <button class="echo-button-primary">Join Event</button>
+      </div>
+    </div>
+
+    <!-- Toast notification container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+   <script src="{% static 'js/main.js' %}"></script>
+   <script src="{% static 'js/host.js' %}"></script>
+
+  </body>
+</html>

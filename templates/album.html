@@ -1,0 +1,120 @@
+
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}EchoMoments-album{% endblock title %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/album.css' %}">
+{% endblock extra_css %}
+
+ {% block body %}
+
+
+      <main>
+        <!-- Album Header -->
+        <section class="album-header">
+          <div class="echo-container">
+            <div class="album-details">
+              <h1 id="albumTitle">Album Title</h1>
+              <div class="album-meta">
+                <div class="album-date"><i class="far fa-calendar"></i> <span id="albumDate">Loading...</span></div>
+                <div class="album-count"><i class="far fa-images"></i> <span id="albumPhotoCount">Loading...</span> photos</div>
+              </div>
+              
+              <div class="album-actions">
+                <button class="echo-button-primary">
+                  <i class="fas fa-upload"></i>
+                  Add Photos
+                </button>
+                <button class="echo-button-outline">
+                  <i class="fas fa-share-alt"></i>
+                  Share Album
+                </button>
+                <button class="echo-button-ghost">
+                  <i class="fas fa-download"></i>
+                  Download All
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+        
+        <!-- Photo Gallery -->
+        <section class="photo-gallery">
+          <div class="echo-container">
+            <div class="gallery-toolbar">
+              <div class="view-toggle">
+                <button class="view-button active" data-view="grid"><i class="fas fa-th"></i></button>
+                <button class="view-button" data-view="masonry"><i class="fas fa-columns"></i></button>
+              </div>
+              
+              <div class="gallery-filters">
+                <select class="filter-dropdown">
+                  <option>All Photos</option>
+                  <option>People</option>
+                  <option>Groups</option>
+                  <option>Activities</option>
+                </select>
+                
+                <input type="text" class="search-input" placeholder="Search photos...">
+              </div>
+            </div>
+            
+            <div class="gallery-grid" id="photoGallery">
+              <!-- Photos will be loaded via JavaScript -->
+              <div class="loading-spinner">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Loading photos...</p>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+      
+      
+
+    <!-- Photo Lightbox -->
+    <div class="lightbox" id="photoLightbox">
+      <div class="lightbox-content">
+        <button class="lightbox-close" aria-label="Close lightbox">&times;</button>
+        <div class="lightbox-image-container">
+          <img id="lightboxImage" src="" alt="Lightbox image">
+        </div>
+        <div class="lightbox-info">
+          <div class="lightbox-toolbar">
+            <div class="lightbox-counter">
+              <span id="currentPhotoIndex">1</span> of <span id="totalPhotos">100</span>
+            </div>
+            <div class="lightbox-actions">
+              <button class="lightbox-action" aria-label="Like photo"><i class="far fa-heart"></i></button>
+              <button class="lightbox-action" aria-label="Download photo"><i class="fas fa-download"></i></button>
+              <button class="lightbox-action" aria-label="Share photo"><i class="fas fa-share-alt"></i></button>
+            </div>
+          </div>
+          
+          <div class="lightbox-caption" id="lightboxCaption">
+            Photo caption or description will appear here
+          </div>
+          
+          <div class="lightbox-faces">
+            <h4>People in this photo:</h4>
+            <div class="face-tags" id="faceTags">
+              <!-- Face tags will be populated by JavaScript -->
+            </div>
+          </div>
+        </div>
+        
+        <button class="lightbox-nav lightbox-prev" aria-label="Previous photo"><i class="fas fa-chevron-left"></i></button>
+        <button class="lightbox-nav lightbox-next" aria-label="Next photo"><i class="fas fa-chevron-right"></i></button>
+      </div>
+    </div>
+
+    <!-- Toast notification container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+   {% block extra_js %}
+<script src="{% static 'js/album.js' %}"></script>
+{% endblock %}
+
+{% endblock body %}

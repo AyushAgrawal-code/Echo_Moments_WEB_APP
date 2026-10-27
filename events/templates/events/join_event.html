@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Join Event - EchoMoments{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+{% endblock %}
+
+{% block body %}
+<main class="main-content">
+    <div class="container">
+
+        <div class="echo-card" style="max-width: 500px; margin: 0 auto; text-align: center;">
+            <div class="card-header">
+                <h2>Join Event</h2>
+                <p>Enter the event code shared by the host</p>
+            </div>
+
+            <form method="POST" style="padding: 2rem;">
+                {% csrf_token %}
+
+                <input
+                    type="text"
+                    name="event_code" value="{{ request.GET.event_code }}"
+                    placeholder="Enter Event Code"
+                    class="echo-input"
+                    required
+                    style="text-transform: uppercase;"
+                >
+
+                <button class="echo-button-primary" style="margin-top: 1rem; width: 100%;">
+                    Join Event
+                </button>
+            </form>
+        </div>
+
+    </div>
+</main>
+{% endblock %}
+
+

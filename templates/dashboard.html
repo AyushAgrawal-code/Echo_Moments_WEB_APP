@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}EchoMoments - Dashboard{% endblock title %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+{% endblock extra_css %}
+
+{% block body %}
+<main class="dashboard">
+  <section class="dashboard-header">
+    <div class="echo-container">
+      <h1>👋 Welcome, {{ name }}!</h1>
+      <p>Your hub for managing and joining events on EchoMoments.</p>
+
+    </div>
+  </section>
+
+  <section class="dashboard-actions">
+    <div class="echo-container">
+      <div class="action-cards">
+        <div class="action-card">
+          <h3>Host an Event</h3>
+          <p>Create a new event and manage your guest album.</p>
+          <button class="echo-button-primary" onclick="window.location.href='/host/'">
+            <i class="fas fa-camera"></i> Host Event
+          </button>
+        </div>
+
+        <div class="action-card">
+          <h3>Join an Event</h3>
+          <p>Have a code or QR? Join your friend's event now.</p>
+          <button class="echo-button-outline" onclick="window.location.href='/join/'">
+            <i class="fas fa-users"></i> Join Event
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="dashboard-history">
+    <div class="echo-container">
+      <h2 style="display: flex; justify-self: center;">Your Activity</h2>
+      <br>
+      <h3>Active Events</h3>
+      <div class="history-grid active">
+        <div class="history-card active">
+          <h4>Hosted Events 🏠</h4>
+          <p>You have hosted <strong>2</strong> events.</p>
+          <small>Last: Farewell 2025 (12 Aug 2025)</small>
+        </div>
+
+        <div class="history-card">
+          <h4>Joined Events 👥</h4>
+          <p>You've joined <strong>0</strong> events.</p>
+        </div>
+      </div>
+      <h3>Past Activity</h3>
+      <div class="history-grid past">
+         <div class="history-card past">
+          <h4>Hosted Events 🏠</h4>
+          <p>You have hosted <strong>2</strong> events.</p>
+          <small>Last: Farewell 2025 (12 Aug 2025)</small>
+        </div>
+        <div class="history-card">
+          <h4>Joined Events 👥</h4>
+          <p>You've joined <strong>0</strong> events.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+{% endblock body %}
+{% block extra_js %}
+
+{% endblock %}

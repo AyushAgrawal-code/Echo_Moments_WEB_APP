@@ -1,0 +1,288 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Album - EchoMoments</title>
+    <link rel="stylesheet" href="{% static 'css/css.css' %}">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <a href="#" class="logo">
+                    <div class="logo-icon">E</div>
+                    EchoMoments
+                </a>
+                <nav class="nav">
+                    <a href="#">Dashboard</a>
+                    <a href="#" class="active">Album</a>
+                    <button class="echo-button-primary" onclick="downloadAllPhotos()">📥 Download All</button>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Album Header -->
+    <section class="page-header">
+        <div class="container">
+            <div class="event-info">
+                <h1 class="page-title" style="color: white; margin-bottom: 0;">Wedding Reception Album</h1>
+                <p class="page-subtitle" style="color: rgba(255,255,255,0.8);">All memories from your special event</p>
+                <div style="margin-top: 1rem; opacity: 0.9; display: flex; gap: 2rem;">
+                    <span><strong>24</strong> Photos</span>
+                    <span><strong>8</strong> Contributors</span>
+                    <span><strong>Created</strong> 2 hours ago</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Filters and Controls -->
+    <section class="container">
+        <div class="echo-card" style="margin-bottom: 2rem;">
+            <div class="card-content">
+                <div class="filters">
+                    <div class="filter-group">
+                        <label class="form-label">Filter by uploader:</label>
+                        <select class="form-select" id="uploaderFilter" onchange="filterPhotos()" style="width: auto;">
+                            <option value="all">All Contributors</option>
+                            <option value="host">Host</option>
+                            <option value="sarah">Sarah Johnson (4)</option>
+                            <option value="mike">Mike Chen (7)</option>
+                            <option value="emily">Emily Davis (2)</option>
+                            <option value="others">Others (11)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label class="form-label">Sort by:</label>
+                        <select class="form-select" id="sortFilter" onchange="sortPhotos()" style="width: auto;">
+                            <option value="newest">Newest First</option>
+                            <option value="oldest">Oldest First</option>
+                            <option value="uploader">By Uploader</option>
+                            <option value="most-liked">Most Liked</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label class="form-label">View:</label>
+                        <select class="form-select" id="viewMode" onchange="changeViewMode()" style="width: auto;">
+                            <option value="grid">Grid View</option>
+                            <option value="masonry">Masonry</option>
+                            <option value="slideshow">Slideshow</option>
+                        </select>
+                    </div>
+
+                    <button class="echo-button-outline" onclick="refreshAlbum()">
+                        🔄 Refresh
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Photo Album Grid -->
+    <main class="container">
+        <div id="photoAlbum" class="photo-grid">
+            <!-- Sample wedding photos for demo -->
+            <div class="photo-item" data-uploader="sarah" data-timestamp="1640995200" onclick="openPhotoModal(this)">
+                <img src="https://images.unsplash.com/photo-1469371670807-013ccf25f16a?w=400&h=400&fit=crop&crop=faces" alt="Wedding ceremony">
+                <div class="photo-overlay">
+                    <p>Sarah Johnson • 2 min ago</p>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
+                        <span>❤️ 5</span>
+                        <button onclick="event.stopPropagation(); likePhoto(this)" style="background: none; border: none; color: white; cursor: pointer;">👍</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="photo-item" data-uploader="mike" data-timestamp="1640995100" onclick="openPhotoModal(this)">
+                <img src="https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=400&h=400&fit=crop&crop=faces" alt="Wedding reception">
+                <div class="photo-overlay">
+                    <p>Mike Chen • 4 min ago</p>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
+                        <span>❤️ 8</span>
+                        <button onclick="event.stopPropagation(); likePhoto(this)" style="background: none; border: none; color: white; cursor: pointer;">👍</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="photo-item" data-uploader="emily" data-timestamp="1640995000" onclick="openPhotoModal(this)">
+                <img src="https://images.unsplash.com/photo-1465495976277-4387d4b0e4a6?w=400&h=400&fit=crop&crop=faces" alt="Wedding dance">
+                <div class="photo-overlay">
+                    <p>Emily Davis • 6 min ago</p>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
+                        <span>❤️ 3</span>
+                        <button onclick="event.stopPropagation(); likePhoto(this)" style="background: none; border: none; color: white; cursor: pointer;">👍</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="photo-item" data-uploader="sarah" data-timestamp="1640994900" onclick="openPhotoModal(this)">
+                <img src="https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=400&h=400&fit=crop&crop=faces" alt="Wedding bouquet">
+                <div class="photo-overlay">
+                    <p>Sarah Johnson • 8 min ago</p>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
+                        <span>❤️ 6</span>
+                        <button onclick="event.stopPropagation(); likePhoto(this)" style="background: none; border: none; color: white; cursor: pointer;">👍</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="photo-item" data-uploader="mike" data-timestamp="1640994800" onclick="openPhotoModal(this)">
+                <img src="https://images.unsplash.com/photo-1606216794074-735e91aa2c92?w=400&h=400&fit=crop&crop=faces" alt="Wedding toast">
+                <div class="photo-overlay">
+                    <p>Mike Chen • 10 min ago</p>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
+                        <span>❤️ 4</span>
+                        <button onclick="event.stopPropagation(); likePhoto(this)" style="background: none; border: none; color: white; cursor: pointer;">👍</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="photo-item" data-uploader="host" data-timestamp="1640994700" onclick="openPhotoModal(this)">
+                <img src="https://images.unsplash.com/photo-1519741497674-611481863552?w=400&h=400&fit=crop&crop=faces" alt="Wedding venue">
+                <div class="photo-overlay">
+                    <p>Host • 12 min ago</p>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
+                        <span>❤️ 9</span>
+                        <button onclick="event.stopPropagation(); likePhoto(this)" style="background: none; border: none; color: white; cursor: pointer;">👍</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="photo-item" data-uploader="emily" data-timestamp="1640994600" onclick="openPhotoModal(this)">
+                <img src="https://images.unsplash.com/photo-1537633552985-df8429e8048b?w=400&h=400&fit=crop&crop=faces" alt="Wedding rings">
+                <div class="photo-overlay">
+                    <p>Emily Davis • 15 min ago</p>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
+                        <span>❤️ 7</span>
+                        <button onclick="event.stopPropagation(); likePhoto(this)" style="background: none; border: none; color: white; cursor: pointer;">👍</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="photo-item" data-uploader="mike" data-timestamp="1640994500" onclick="openPhotoModal(this)">
+                <img src="https://images.unsplash.com/photo-1545558014-8692077e9b5c?w=400&h=400&fit=crop&crop=faces" alt="Wedding cake">
+                <div class="photo-overlay">
+                    <p>Mike Chen • 18 min ago</p>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
+                        <span>❤️ 12</span>
+                        <button onclick="event.stopPropagation(); likePhoto(this)" style="background: none; border: none; color: white; cursor: pointer;">👍</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Additional photos to demonstrate variety -->
+            <div class="photo-item" data-uploader="sarah" data-timestamp="1640994400" onclick="openPhotoModal(this)">
+                <img src="https://images.unsplash.com/photo-1522673607200-164d1b6ce486?w=400&h=400&fit=crop&crop=faces" alt="Wedding guests">
+                <div class="photo-overlay">
+                    <p>Sarah Johnson • 20 min ago</p>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
+                        <span>❤️ 2</span>
+                        <button onclick="event.stopPropagation(); likePhoto(this)" style="background: none; border: none; color: white; cursor: pointer;">👍</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="photo-item" data-uploader="host" data-timestamp="1640994300" onclick="openPhotoModal(this)">
+                <img src="https://images.unsplash.com/photo-1516975080664-ed2fc6a32937?w=400&h=400&fit=crop&crop=faces" alt="Wedding flowers">
+                <div class="photo-overlay">
+                    <p>Host • 25 min ago</p>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
+                        <span>❤️ 11</span>
+                        <button onclick="event.stopPropagation(); likePhoto(this)" style="background: none; border: none; color: white; cursor: pointer;">👍</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="photo-item" data-uploader="mike" data-timestamp="1640994200" onclick="openPhotoModal(this)">
+                <img src="https://images.unsplash.com/photo-1520854221256-17451cc331bf?w=400&h=400&fit=crop&crop=faces" alt="Wedding party">
+                <div class="photo-overlay">
+                    <p>Mike Chen • 28 min ago</p>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
+                        <span>❤️ 6</span>
+                        <button onclick="event.stopPropagation(); likePhoto(this)" style="background: none; border: none; color: white; cursor: pointer;">👍</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="photo-item" data-uploader="sarah" data-timestamp="1640994100" onclick="openPhotoModal(this)">
+                <img src="https://images.unsplash.com/photo-1594736797933-d0601ba2fe65?w=400&h=400&fit=crop&crop=faces" alt="Wedding sunset">
+                <div class="photo-overlay">
+                    <p>Sarah Johnson • 30 min ago</p>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
+                        <span>❤️ 15</span>
+                        <button onclick="event.stopPropagation(); likePhoto(this)" style="background: none; border: none; color: white; cursor: pointer;">👍</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Load More Button -->
+        <div class="text-center mt-4" id="loadMoreSection">
+            <button class="echo-button-outline" onclick="loadMorePhotos()">
+                Load More Photos
+            </button>
+        </div>
+    </main>
+
+    <!-- Photo Modal -->
+    <div id="photoModal" class="modal">
+        <div class="modal-content" style="max-width: 90vw; max-height: 90vh;">
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title" id="modalPhotoTitle">Photo Details</h3>
+                    <p id="modalPhotoInfo" style="color: #6B7280; margin: 0;"></p>
+                </div>
+                <button class="modal-close" onclick="closeModal('photoModal')">&times;</button>
+            </div>
+            <div style="text-align: center; max-height: 70vh; overflow: hidden;">
+                <img id="modalPhoto" style="max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 0.5rem;" alt="Photo preview">
+            </div>
+            <div style="margin-top: 1rem; display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+                <button class="echo-button-primary" onclick="likeCurrentPhoto()">
+                    ❤️ Like (<span id="modalLikeCount">0</span>)
+                </button>
+                <button class="echo-button-outline" onclick="downloadCurrentPhoto()">
+                    📥 Download
+                </button>
+                <button class="echo-button-ghost" onclick="sharePhoto()">
+                    🔗 Share
+                </button>
+                <button class="echo-button-ghost" onclick="reportPhoto()" style="color: #EF4444;">
+                    🚨 Report
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slideshow Modal -->
+    <div id="slideshowModal" class="modal">
+        <div class="modal-content" style="max-width: 95vw; max-height: 95vh; padding: 1rem;">
+            <div class="modal-header">
+                <h3 class="modal-title">Slideshow</h3>
+                <button class="modal-close" onclick="closeSlideshowModal()">&times;</button>
+            </div>
+            <div style="position: relative; text-align: center;">
+                <img id="slideshowPhoto" style="max-width: 100%; max-height: 80vh; object-fit: contain; border-radius: 0.5rem;" alt="Slideshow photo">
+                <button onclick="previousSlide()" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.5); color: white; border: none; padding: 1rem; border-radius: 50%; cursor: pointer; font-size: 1.5rem;">‹</button>
+                <button onclick="nextSlide()" style="position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.5); color: white; border: none; padding: 1rem; border-radius: 50%; cursor: pointer; font-size: 1.5rem;">›</button>
+            </div>
+            <div style="margin-top: 1rem; text-align: center;">
+                <p id="slideshowInfo" style="color: #6B7280;"></p>
+                <div style="margin-top: 1rem;">
+                    <button class="echo-button-ghost" onclick="toggleSlideshowAutoplay()" id="autoplayButton">⏸️ Pause</button>
+                    <span style="color: #6B7280; margin: 0 1rem;">|</span>
+                    <span id="slideshowCounter" style="color: #6B7280;">1 of 24</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="scripts/centralized-album.js"></script>
+</body>
+</html>

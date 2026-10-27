@@ -1,0 +1,202 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guest Dashboard - EchoMoments</title>
+    <link rel="stylesheet" href="{% static 'css/css.css' %}">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <a href="#" class="logo">
+                    <div class="logo-icon">E</div>
+                    EchoMoments
+                </a>
+                <nav class="nav">
+                    <span style="color: var(--echo-foreground);">Welcome, <strong id="guestName">Sarah Johnson</strong></span>
+                    <a href="centralized-album.html">View All Photos</a>
+                    <button class="echo-button-ghost" onclick="leaveEvent()">Leave Event</button>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Event Info -->
+    <section class="page-header">
+        <div class="container">
+            <div class="event-info">
+                <h1 class="page-title" style="color: white; margin-bottom: 0;">Wedding Reception</h1>
+                <p class="page-subtitle" style="color: rgba(255,255,255,0.8);">Share your beautiful moments</p>
+                <div style="margin-top: 1rem; opacity: 0.9;">
+                    Event Code: <strong>ABC123</strong>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Upload Stats -->
+    <section class="container">
+        <div class="stats-grid">
+            <div class="stat-card">
+                <span class="stat-number" id="myPhotos">4</span>
+                <span class="stat-label">My Photos</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number" id="uploadLimit">25</span>
+                <span class="stat-label">Upload Limit</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number" id="remainingUploads">21</span>
+                <span class="stat-label">Remaining</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number" id="totalEventPhotos">24</span>
+                <span class="stat-label">Total Event Photos</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <main class="container">
+        <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 2rem; margin-bottom: 3rem;">
+            
+            <!-- Upload Section -->
+            <div class="echo-card">
+                <div class="card-header">
+                    <h3 class="card-title">Upload Photos</h3>
+                    <p class="card-description">Share your memories with everyone</p>
+                </div>
+                <div class="card-content">
+                    <div class="upload-area" id="uploadArea" onclick="document.getElementById('guestFileInput').click()">
+                        <div class="upload-icon">📸</div>
+                        <h4>Click to Upload Photos</h4>
+                        <p>or drag and drop images here</p>
+                        <small style="color: #6B7280; margin-top: 1rem; display: block;">
+                            Maximum file size: 10MB per image<br>
+                            Supported formats: JPG, PNG, HEIC
+                        </small>
+                    </div>
+                    <input type="file" id="guestFileInput" multiple accept="image/*" style="display: none;" onchange="handleGuestUpload(this)">
+                    
+                    <!-- Upload Progress -->
+                    <div id="uploadProgress" class="hidden" style="margin-top: 1rem;">
+                        <div style="background: var(--echo-border); border-radius: 0.5rem; height: 0.5rem; margin-bottom: 0.5rem;">
+                            <div id="progressBar" style="background: var(--echo-emerald); height: 100%; border-radius: 0.5rem; width: 0%; transition: width 0.3s;"></div>
+                        </div>
+                        <p id="uploadStatus" style="font-size: 0.875rem; color: #6B7280;">Uploading...</p>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-size: 0.875rem; color: #6B7280;">
+                            <span id="photosUploaded">4</span> of <span id="maxPhotos">25</span> photos uploaded
+                        </span>
+                        <button class="echo-button-outline" onclick="clearAllPhotos()" id="clearButton">
+                            Clear All
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="echo-card">
+                <div class="card-header">
+                    <h3 class="card-title">Recent Activity</h3>
+                    <p class="card-description">Latest uploads from everyone</p>
+                </div>
+                <div class="card-content">
+                    <div id="recentActivity">
+                        <div class="activity-item" style="display: flex; align-items: center; gap: 1rem; padding: 0.75rem; border-bottom: 1px solid var(--echo-border);">
+                            <div style="width: 3rem; height: 3rem; background: var(--echo-peach); border-radius: 0.5rem; display: flex; align-items: center; justify-content: center;">📷</div>
+                            <div style="flex: 1;">
+                                <p><strong>Mike Chen</strong> uploaded 3 photos</p>
+                                <small style="color: #6B7280;">2 minutes ago</small>
+                            </div>
+                        </div>
+                        <div class="activity-item" style="display: flex; align-items: center; gap: 1rem; padding: 0.75rem; border-bottom: 1px solid var(--echo-border);">
+                            <div style="width: 3rem; height: 3rem; background: var(--echo-peach); border-radius: 0.5rem; display: flex; align-items: center; justify-content: center;">📷</div>
+                            <div style="flex: 1;">
+                                <p><strong>You</strong> uploaded 2 photos</p>
+                                <small style="color: #6B7280;">5 minutes ago</small>
+                            </div>
+                        </div>
+                        <div class="activity-item" style="display: flex; align-items: center; gap: 1rem; padding: 0.75rem; border-bottom: 1px solid var(--echo-border);">
+                            <div style="width: 3rem; height: 3rem; background: var(--echo-peach); border-radius: 0.5rem; display: flex; align-items: center; justify-content: center;">📷</div>
+                            <div style="flex: 1;">
+                                <p><strong>Emily Davis</strong> uploaded 1 photo</p>
+                                <small style="color: #6B7280;">12 minutes ago</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button class="echo-button-primary" onclick="window.location.href='centralized-album.html'">
+                        View All Photos
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- My Photos Grid -->
+        <div class="echo-card">
+            <div class="card-header">
+                <h3 class="card-title">My Photos</h3>
+                <p class="card-description">Photos you've uploaded to this event</p>
+            </div>
+            <div class="card-content">
+                <div id="myPhotosGrid" class="photo-grid">
+                    <!-- Sample photos for demo -->
+                    <div class="photo-item">
+                        <img src="https://images.unsplash.com/photo-1469371670807-013ccf25f16a?w=400&h=400&fit=crop&crop=faces" alt="Wedding photo 1">
+                        <div class="photo-overlay">
+                            <p>Uploaded 5 min ago</p>
+                        </div>
+                    </div>
+                    <div class="photo-item">
+                        <img src="https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=400&h=400&fit=crop&crop=faces" alt="Wedding photo 2">
+                        <div class="photo-overlay">
+                            <p>Uploaded 8 min ago</p>
+                        </div>
+                    </div>
+                    <div class="photo-item">
+                        <img src="https://images.unsplash.com/photo-1465495976277-4387d4b0e4a6?w=400&h=400&fit=crop&crop=faces" alt="Wedding photo 3">
+                        <div class="photo-overlay">
+                            <p>Uploaded 15 min ago</p>
+                        </div>
+                    </div>
+                    <div class="photo-item">
+                        <img src="https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=400&h=400&fit=crop&crop=faces" alt="Wedding photo 4">
+                        <div class="photo-overlay">
+                            <p>Uploaded 20 min ago</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Photo Preview Modal -->
+    <div id="photoModal" class="modal">
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="modal-header">
+                <h3 class="modal-title">Photo Preview</h3>
+                <button class="modal-close" onclick="closeModal('photoModal')">&times;</button>
+            </div>
+            <div id="modalPhotoContainer" style="text-align: center;">
+                <img id="modalPhoto" style="max-width: 100%; max-height: 70vh; border-radius: 0.5rem;" alt="Photo preview">
+                <div style="margin-top: 1rem; display: flex; gap: 1rem; justify-content: center;">
+                    <button class="echo-button-ghost" onclick="deletePhoto()">🗑️ Delete</button>
+                    <button class="echo-button-outline" onclick="downloadPhoto()">📥 Download</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{% static 'js/guest_dashboard.js' %}"></script>
+</body>
+</html>

@@ -1,0 +1,279 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}EchoMoments — Create Event{% endblock title %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/host.css' %}">
+{% endblock extra_css %}
+
+{% block body %}
+<main>
+  <!-- Host Header -->
+  <section class="host-header">
+    <div class="echo-container">
+      <h1>Create a New Event</h1>
+      <p>Set up a shared album for your upcoming event. Invite guests to contribute photos and create memories together.</p>
+    </div>
+  </section>
+
+  <!-- Create Event Form (wizard) -->
+  <section class="create-event-section">
+    <div class="echo-container">
+      <div class="event-form-container">
+
+        <form id="createEventForm" class="event-form" method="POST" enctype="multipart/form-data" novalidate>
+          {% csrf_token %}
+          <!-- STEP 1 -->
+          <div class="form-step active" data-step="1">
+            <h2>Event Details</h2>
+
+            <div class="form-group">
+              <label for="eventName">Event Name <span class="required">*</span></label>
+              <input type="text" id="eventName" name="event_name" required placeholder="e.g., Smith Wedding">
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="eventDate">Event Date <span class="required">*</span></label>
+                <input type="date" id="eventDate" name="event_date" required>
+              </div>
+
+              <div class="form-group">
+                <label for="eventTime">Event Time</label>
+                <input type="time" id="eventTime" name="event_time">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="eventLocation">Location</label>
+              <input type="text" id="eventLocation" name="location" placeholder="e.g., Bright Gardens, 123 Main St">
+            </div>
+
+            <div class="form-group">
+              <label for="eventDescription">Description</label>
+              <textarea id="eventDescription" name="description" rows="4" placeholder="Add details about your event..."></textarea>
+            </div>
+
+            <div class="form-actions">
+              <button type="button" class="echo-button-ghost" onclick="window.location.href='/'">Cancel</button>
+              <button type="button" class="echo-button-primary next-step" data-next="2">Next: Access Settings</button>
+            </div>
+          </div>
+
+          <!-- STEP 2 -->
+          <div class="form-step" data-step="2">
+            <h2>Access Settings</h2>
+
+            <div class="form-group">
+              <label>Album Privacy</label>
+              <div class="radio-group">
+                <label class="radio-label">
+                  <input type="radio" name="privacy" value="public" checked>
+                  <span class="radio-text">
+                    <strong>Public with Code</strong>
+                    <span class="radio-description">Anyone with the event code or QR code can join</span>
+                  </span>
+                </label>
+
+                <label class="radio-label">
+                  <input type="radio" name="privacy" value="private">
+                  <span class="radio-text">
+                    <strong>Invitation Only</strong>
+                    <span class="radio-description">Only invited guests can access</span>
+                  </span>
+                </label>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Guest Permissions</label>
+              <div class="checkbox-group">
+                <label class="checkbox-label">
+                  <input type="checkbox" name="allow_upload" checked>
+                  <span class="checkbox-text">Allow guests to upload photos</span>
+                </label>
+
+                <label class="checkbox-label">
+                  <input type="checkbox" name="allow_download" checked>
+                  <span class="checkbox-text">Allow guests to download photos</span>
+                </label>
+
+                <label class="checkbox-label">
+                  <input type="checkbox" name="allow_tag">
+                  <span class="checkbox-text">Allow guests to tag people in photos</span>
+                </label>
+
+                <label class="checkbox-label">
+                  <input type="checkbox" name="allow_comment">
+                  <span class="checkbox-text">Allow comments on photos</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button type="button" class="echo-button-ghost prev-step" data-prev="1">Back</button>
+              <button type="button" class="echo-button-primary next-step" data-next="3">Next: Customize Cover</button>
+            </div>
+          </div>
+
+          <!-- STEP 3 -->
+          <div class="form-step" data-step="3">
+            <h2>Customize Album Cover</h2>
+
+            <div class="form-group">
+              <label>Cover Photo</label>
+              <div class="cover-photo-upload">
+                <div class="cover-photo-preview" id="coverPhotoPreview">
+                  <i class="fas fa-image"></i>
+                  <span>Upload a cover photo</span>
+                </div>
+                <div class="upload-actions">
+                  <label for="coverPhotoUpload" class="echo-button-outline">
+                    <i class="fas fa-upload"></i> Choose File
+                  </label>
+                  <input type="file" id="coverPhotoUpload" name="cover_photo" accept="image/*" hidden>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Cover Theme Color</label>
+              <div class="color-options">
+                <label class="color-option">
+                  <input type="radio" name="theme_color" id="color1" value="emerald" checked>
+                  <label for="color1" class="color-swatch emerald"></label>
+                </label>
+
+                <label class="color-option">
+                  <input type="radio" name="theme_color" id="color2" value="gold">
+                  <label for="color2" class="color-swatch gold"></label>
+                </label>
+
+                <label class="color-option">
+                  <input type="radio" name="theme_color" id="color3" value="purple">
+                  <label for="color3" class="color-swatch purple"></label>
+                </label>
+
+                <label class="color-option">
+                  <input type="radio" name="theme_color" id="color4" value="blue">
+                  <label for="color4" class="color-swatch blue"></label>
+                </label>
+
+                <label class="color-option">
+                  <input type="radio" name="theme_color" id="color5" value="coral">
+                  <label for="color5" class="color-swatch coral"></label>
+                </label>
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button type="button" class="echo-button-ghost prev-step" data-prev="2">Back</button>
+              <button type="submit" class="echo-button-primary">Create Event</button>
+            </div>
+          </div>
+        </form>
+
+        <!-- LIVE PREVIEW -->
+        <div class="event-preview">
+          <div class="event-preview-card">
+            <div class="preview-header">
+              <h3>Event Preview</h3>
+            </div>
+
+            <div class="preview-cover" id="previewCover">
+              <div class="preview-placeholder">
+                <i class="fas fa-image"></i>
+              </div>
+            </div>
+
+            <div class="preview-content">
+              <h4 id="previewTitle">Event Name</h4>
+              <div class="preview-date" id="previewDate"><i class="far fa-calendar"></i> Event Date</div>
+              <p class="preview-description" id="previewDescription">Event description will appear here...</p>
+
+              <div class="preview-info">
+                <div class="preview-qr">
+                  <div class="qr-placeholder" id="previewQRplaceholder">
+                    <i class="fas fa-qrcode"></i>
+                  </div>
+                  <span>QR Code</span>
+                </div>
+
+                <div class="preview-code">
+                  <span>Event Code</span>
+                  <strong id="previewCode">------</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- END PREVIEW -->
+
+      </div> <!-- end event-form-container -->
+    </div>
+  </section>
+</main>
+
+<!-- Success Modal -->
+<div class="modal" id="successModal" style="display:none;">
+  <div class="modal-content">
+    <div class="success-content">
+      <div class="success-icon">
+        <i class="fas fa-check-circle"></i>
+      </div>
+      <h2>Event Created!</h2>
+      <p>Your event has been successfully created. Share the QR code or event code with your guests.</p>
+
+      <div class="event-codes">
+        <div class="qr-code" id="eventQRCode">
+          <div class="qr-placeholder">
+            <i class="fas fa-qrcode"></i>
+          </div>
+        </div>
+
+        <div class="event-code">
+          <p>Event Code</p>
+          <div class="code-display" id="eventCodeDisplay">ABC123</div>
+        </div>
+      </div>
+
+      <div class="share-buttons">
+        <button class="share-button" id="share-button-email">
+          <i class="fas fa-envelope"></i>
+          <span>Email</span>
+        </button>
+        <button class="share-button" id="share-button-whatsapp">
+          <i class="fab fa-whatsapp"></i>
+          <span>WhatsApp</span>
+        </button>
+        <button class="share-button" id="copy-link">
+          <i class="fas fa-link"></i>
+          <span>Copy Link</span>
+        </button>
+      </div>
+
+      <div class="modal-actions">
+        <button class="echo-button-outline" onclick="window.location.href='{% url 'accounts:dashboard' %}'">Back to Home</button>
+        <button class="echo-button-primary" id="viewAlbumBtn">View Album</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast container -->
+<div class="toast-container" id="toastContainer"></div>
+
+{% block extra_js %}
+<script>
+  window.ECHO = {
+    CREATE_EVENT_URL: "{% url 'events:create_event' %}",
+    SITE_BASE: "{{ request.scheme }}://{{ request.get_host }}"
+  };
+</script>
+<script src="{% static 'js/qrcode.min.js' %}"></script>
+<script src="{% static 'js/host.js' %}"></script>
+
+{% endblock %}
+
+{% endblock body %}

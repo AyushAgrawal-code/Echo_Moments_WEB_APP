@@ -1,0 +1,895 @@
+{% load static %}
+
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+```
+<title>Profile | EchoMoments</title>
+
+<link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+<link rel="stylesheet"
+      href="{% static 'css/profile.css' %}">
+```
+
+</head>
+
+<body>
+
+```
+<!-- =====================================================
+     NAVIGATION
+====================================================== -->
+
+<nav class="navbar">
+    <div class="echo-container">
+        <div class="navbar-container">
+
+            <a href="{% url 'accounts:dashboard' %}" class="logo">
+
+                <div class="logo-icon">
+                    <i class="fas fa-camera"
+                       style="color: white; font-size: 1.25rem;">
+                    </i>
+                </div>
+
+                <span class="logo-text">
+                    EchoMoments
+                </span>
+
+            </a>
+
+            <div class="nav-links">
+
+                <a href="{% url 'accounts:dashboard' %}"
+                   class="nav-link">
+                    Home
+                </a>
+
+                <a href="{% url 'accounts:dashboard' %}"
+                   class="nav-link">
+                    Dashboard
+                </a>
+
+                <a href="{% url 'accounts:profile' %}"
+                   class="nav-link active">
+                    Profile
+                </a>
+
+                <a href="#privacy-settings"
+                   class="nav-link">
+                    Settings
+                </a>
+
+            </div>
+
+        </div>
+    </div>
+</nav>
+
+
+<main class="echo-container"
+      style="padding-top: 2rem; padding-bottom: 3rem;">
+
+
+    <!-- =================================================
+         MESSAGES
+    ================================================== -->
+
+    {% if messages %}
+        <div class="profile-messages">
+
+            {% for message in messages %}
+
+                <div class="profile-message {{ message.tags }}">
+
+                    {% if message.tags == "success" %}
+                        <i class="fas fa-check-circle"></i>
+                    {% elif message.tags == "error" %}
+                        <i class="fas fa-exclamation-circle"></i>
+                    {% else %}
+                        <i class="fas fa-info-circle"></i>
+                    {% endif %}
+
+                    <span>{{ message }}</span>
+
+                </div>
+
+            {% endfor %}
+
+        </div>
+    {% endif %}
+
+
+    <!-- =================================================
+         PROFILE HEADER
+    ================================================== -->
+
+    <div class="echo-card">
+
+        <div class="profile-header">
+
+            <div class="profile-avatar-container">
+
+                <!--
+                    IMPORTANT:
+                    Fallback is shown ONLY when there is
+                    no profile picture.
+                -->
+
+                {% if user.profile.profile_pic %}
+
+                    <img src="{{ user.profile.profile_pic.url }}"
+                         alt="{{ user.get_full_name|default:user.username }}"
+                         class="profile-avatar">
+
+                {% else %}
+
+                    <div class="profile-avatar-fallback">
+
+                        {{ user.first_name.0|default:user.username.0 }}{{ user.last_name.0|default:'' }}
+
+                    </div>
+
+                {% endif %}
+
+                <!-- =====================================
+                     AVATAR UPDATE
+                ====================================== -->
+
+                <form method="POST"
+                      enctype="multipart/form-data"
+                      id="avatarForm">
+
+                    {% csrf_token %}
+
+                    <input type="hidden"
+                           name="form_type"
+                           value="avatar">
+
+                    <input type="file"
+                           name="profile_pic"
+                           id="id_profile_pic"
+                           accept="image/*"
+                           class="avatar-file-input"
+                           aria-label="Choose profile photo">
+
+                    <label for="id_profile_pic"
+                           class="avatar-edit-overlay"
+                           title="Change profile picture">
+
+                        <i class="fas fa-camera"></i>
+
+                    </label>
+
+                </form>
+
+            </div>
+
+
+            <!-- Profile basic information -->
+
+            <h1 class="profile-name">
+                {{ request.user.first_name }}
+                {{ request.user.last_name }}
+            </h1>
+
+            <p class="profile-email">
+                {{ request.user.email }}
+            </p>
+
+            <p class="profile-member-since">
+                Member since
+                {{ request.user.date_joined|date:"F Y" }}
+            </p>
+
+
+            <!-- =========================================
+                 PROFILE STATS
+            ========================================== -->
+
+            <div class="profile-stats">
+
+                <div class="stat-item">
+
+                    <span class="stat-number">
+                        {{ hosted_count }}
+                    </span>
+
+                    <div class="stat-label">
+                        Events Hosted
+                    </div>
+
+                </div>
+
+
+                <div class="stat-item">
+
+                    <span class="stat-number">
+                        {{ joined_count }}
+                    </span>
+
+                    <div class="stat-label">
+                        Events Joined
+                    </div>
+
+                </div>
+
+
+                <div class="stat-item">
+
+                    <span class="stat-number">
+                        {{ photos_count }}
+                    </span>
+
+                    <div class="stat-label">
+                        Photos Shared
+                    </div>
+
+                </div>
+
+
+                <div class="stat-item">
+
+                    <span class="stat-number">
+                        {{ memories_count }}
+                    </span>
+
+                    <div class="stat-label">
+                        Memories Created
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =================================================
+         PERSONAL INFORMATION
+    ================================================== -->
+
+    <div class="echo-card">
+
+        <div class="settings-section">
+
+            <h2 class="section-title">
+                <i class="fas fa-user"></i>
+                Personal Information
+            </h2>
+
+
+            <form method="POST"
+                action="{% url 'accounts:profile' %}"
+                  enctype="multipart/form-data"
+                  id="profileForm">
+
+                {% csrf_token %}
+
+                <input type="hidden"
+                       name="form_type"
+                       value="profile">
+
+
+                <!-- =====================================
+                     FORM ERRORS
+                ====================================== -->
+
+                {% if user_form.non_field_errors %}
+
+                    <div class="form-error-box">
+
+                        {% for error in user_form.non_field_errors %}
+                            <div>
+                                <i class="fas fa-exclamation-circle"></i>
+                                {{ error }}
+                            </div>
+                        {% endfor %}
+
+                    </div>
+
+                {% endif %}
+
+
+                {% if profile_form.non_field_errors %}
+
+                    <div class="form-error-box">
+
+                        {% for error in profile_form.non_field_errors %}
+                            <div>
+                                <i class="fas fa-exclamation-circle"></i>
+                                {{ error }}
+                            </div>
+                        {% endfor %}
+
+                    </div>
+
+                {% endif %}
+
+
+                <div class="form-grid">
+
+
+                    <!-- First Name -->
+
+                    <div class="form-group">
+
+                        <label class="form-label"
+                               for="{{ user_form.first_name.id_for_label }}">
+                            First Name
+                        </label>
+
+                        {{ user_form.first_name }}
+
+                        {% for error in user_form.first_name.errors %}
+                            <div class="field-error">
+                                {{ error }}
+                            </div>
+                        {% endfor %}
+
+                    </div>
+
+
+                    <!-- Last Name -->
+
+                    <div class="form-group">
+
+                        <label class="form-label"
+                               for="{{ user_form.last_name.id_for_label }}">
+                            Last Name
+                        </label>
+
+                        {{ user_form.last_name }}
+
+                        {% for error in user_form.last_name.errors %}
+                            <div class="field-error">
+                                {{ error }}
+                            </div>
+                        {% endfor %}
+
+                    </div>
+
+
+                    <!-- Email -->
+
+                    <div class="form-group">
+
+                        <label class="form-label"
+                               for="{{ user_form.email.id_for_label }}">
+                            Email Address
+                        </label>
+
+                        {{ user_form.email }}
+
+                        {% for error in user_form.email.errors %}
+                            <div class="field-error">
+                                {{ error }}
+                            </div>
+                        {% endfor %}
+
+                    </div>
+
+
+                    <!-- Phone -->
+
+                    <div class="form-group">
+
+                        <label class="form-label"
+                               for="{{ profile_form.phone.id_for_label }}">
+                            Phone Number
+                        </label>
+
+                        {{ profile_form.phone }}
+
+                        {% for error in profile_form.phone.errors %}
+                            <div class="field-error">
+                                {{ error }}
+                            </div>
+                        {% endfor %}
+
+                    </div>
+
+
+                    <!-- Date of Birth -->
+
+                    <div class="form-group">
+
+                        <label class="form-label"
+                               for="{{ profile_form.date_of_birth.id_for_label }}">
+                            Date of Birth
+                        </label>
+
+                        {{ profile_form.date_of_birth }}
+
+                        {% for error in profile_form.date_of_birth.errors %}
+                            <div class="field-error">
+                                {{ error }}
+                            </div>
+                        {% endfor %}
+
+                    </div>
+
+
+                    <!-- Location -->
+
+                    <div class="form-group">
+
+                        <label class="form-label"
+                               for="{{ profile_form.location.id_for_label }}">
+                            Location
+                        </label>
+
+                        {{ profile_form.location }}
+
+                        {% for error in profile_form.location.errors %}
+                            <div class="field-error">
+                                {{ error }}
+                            </div>
+                        {% endfor %}
+
+                    </div>
+
+
+                    <!-- Bio -->
+
+                    <div class="form-group full-width">
+
+                        <label class="form-label"
+                               for="{{ profile_form.bio.id_for_label }}">
+                            Bio
+                        </label>
+
+                        {{ profile_form.bio }}
+
+                        {% for error in profile_form.bio.errors %}
+                            <div class="field-error">
+                                {{ error }}
+                            </div>
+                        {% endfor %}
+
+                    </div>
+
+
+                </div>
+
+
+                <!-- =====================================
+                     FORM ACTIONS
+                ====================================== -->
+
+                <div class="form-actions">
+
+                    <a href="{% url 'accounts:profile' %}"
+                       class="echo-button-ghost">
+                        Cancel
+                    </a>
+
+                    <button type="submit"
+                            class="echo-button-primary">
+
+                        <i class="fas fa-save"></i>
+                        Save Changes
+
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+
+    <!-- =================================================
+         PRIVACY & NOTIFICATIONS
+    ================================================== -->
+
+    <div class="echo-card"
+         id="privacy-settings">
+
+        <div class="settings-section">
+
+            <h2 class="section-title">
+                <i class="fas fa-shield-alt"></i>
+                Privacy & Notifications
+            </h2>
+
+
+            <!-- Profile Visibility -->
+
+            <div class="setting-item">
+
+                <div class="setting-info">
+
+                    <h4>
+                        Profile Visibility
+                    </h4>
+
+                    <p>
+                        Control who can see your profile and activity
+                    </p>
+
+                </div>
+
+
+                <!--
+                    Currently UI-only.
+                    Database settings will be connected separately
+                    after ProfileSettingsForm is added.
+                -->
+
+                <select class="form-input"
+                        id="profileVisibility"
+                        disabled>
+
+                    <option>
+                        Public
+                    </option>
+
+                    <option selected>
+                        Friends Only
+                    </option>
+
+                    <option>
+                        Private
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <!-- Email Notifications -->
+
+            <div class="setting-item">
+
+                <div class="setting-info">
+
+                    <h4>
+                        Email Notifications
+                    </h4>
+
+                    <p>
+                        Receive updates about events and activities
+                    </p>
+
+                </div>
+
+
+                <!--
+                    Currently UI-only.
+                    Disabled temporarily so the user does not
+                    think this is being saved to the database.
+                -->
+
+                <label class="toggle-switch">
+
+                    <input type="checkbox"
+                           id="emailNotifications"
+                           checked
+                           disabled>
+
+                    <span class="toggle-slider"></span>
+
+                </label>
+
+            </div>
+
+
+        </div>
+
+    </div>
+
+
+    <!-- =================================================
+         SECURITY
+    ================================================== -->
+
+    <div class="echo-card">
+
+        <div class="settings-section">
+
+            <h2 class="section-title">
+                <i class="fas fa-lock"></i>
+                Security & Access
+            </h2>
+
+
+            <div class="setting-item">
+
+                <div class="setting-info">
+
+                    <h4>
+                        Change Password
+                    </h4>
+
+                    <p>
+                        Update your account password
+                    </p>
+
+                </div>
+
+
+                <a href="{% url 'password_change' %}"
+                   class="echo-button-outline">
+
+                    <i class="fas fa-key"></i>
+                    Change Password
+
+                </a>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =================================================
+         DANGER ZONE
+    ================================================== -->
+
+    <div class="echo-card danger-zone">
+
+        <div class="settings-section">
+
+            <h2 class="section-title">
+                <i class="fas fa-exclamation-triangle"></i>
+                Danger Zone
+            </h2>
+
+
+            <form method="POST"
+                  action="{% url 'accounts:delete_account' %}"
+                  id="deleteAccountForm">
+
+                {% csrf_token %}
+
+
+                <div class="setting-item">
+
+                    <div class="setting-info">
+
+                        <h4>
+                            Delete Account
+                        </h4>
+
+                        <p>
+                            Permanently delete your account.
+                            This cannot be undone.
+                        </p>
+
+                    </div>
+
+
+                    <button type="submit"
+                            class="echo-button-danger"
+                            id="deleteAccountButton">
+
+                        <i class="fas fa-trash"></i>
+                        Delete Account
+
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+
+</main>
+
+
+<!-- =====================================================
+     JAVASCRIPT
+====================================================== -->
+
+<script>
+
+    // =================================================
+    // TOAST HELPER
+    // =================================================
+
+    function showToast(message, type = 'success') {
+
+        const toast = document.createElement('div');
+
+        toast.className = 'toast';
+
+        toast.innerHTML = `
+            <i class="fas fa-${
+                type === 'success'
+                    ? 'check-circle'
+                    : 'exclamation-circle'
+            }"></i>
+
+            <span>${message}</span>
+        `;
+
+
+        let toastContainer =
+            document.querySelector('.toast-container');
+
+
+        if (!toastContainer) {
+
+            toastContainer =
+                document.createElement('div');
+
+            toastContainer.className =
+                'toast-container';
+
+            document.body.appendChild(
+                toastContainer
+            );
+
+        }
+
+
+        toastContainer.appendChild(toast);
+
+
+        setTimeout(() => {
+
+            toast.style.animation =
+                'slideOut 0.3s ease-out forwards';
+
+
+            setTimeout(() => {
+
+                toast.remove();
+
+            }, 300);
+
+        }, 4000);
+
+    }
+
+
+    // =================================================
+    // AUTO SUBMIT AVATAR
+    // =================================================
+
+    (function () {
+
+        const picInputId =
+            "id_profile_pic";
+
+
+        const picInput =
+            document.getElementById(picInputId);
+
+
+        if (picInput) {
+
+            picInput.addEventListener(
+                "change",
+                function () {
+
+                    if (!this.files || !this.files.length) {
+                        return;
+                    }
+
+
+                    const avatarForm =
+                        document.getElementById(
+                            "avatarForm"
+                        );
+
+
+                    if (avatarForm) {
+
+                        avatarForm.submit();
+
+                    }
+
+                }
+            );
+
+        }
+
+    })();
+
+
+    // =================================================
+    // PROFILE FORM SUBMIT FEEDBACK
+    // =================================================
+
+    (function () {
+
+        const profileForm =
+            document.getElementById(
+                "profileForm"
+            );
+
+
+        if (profileForm) {
+
+            profileForm.addEventListener(
+                "submit",
+                function () {
+
+                    showToast(
+                        "Saving profile...",
+                        "success"
+                    );
+
+                }
+            );
+
+        }
+
+    })();
+
+
+    // =================================================
+    // DELETE ACCOUNT CONFIRMATION
+    // =================================================
+
+    (function () {
+
+        const deleteButton =
+            document.getElementById(
+                "deleteAccountButton"
+            );
+
+
+        const deleteForm =
+            document.getElementById(
+                "deleteAccountForm"
+            );
+
+
+        if (
+            deleteButton &&
+            deleteForm
+        ) {
+
+            deleteButton.addEventListener(
+                "click",
+                function (event) {
+
+                    event.preventDefault();
+
+
+                    const confirmed =
+                        confirm(
+                            "Are you sure you want to delete your account? " +
+                            "This action cannot be undone."
+                        );
+
+
+                    if (confirmed) {
+
+                        deleteForm.submit();
+
+                    }
+
+                }
+            );
+
+        }
+
+    })();
+
+
+</script>
+```
+
+</body>
+
+</html>
+

@@ -1,0 +1,324 @@
+{% load static %}
+
+{% comment %} {% extends "base.html" %} {% endcomment %}
+
+{% comment %} {% block title %}EchoMoments-home{% endblock title %}
+
+ {% block body %} {% endcomment %}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}{% endblock title %}</title>
+    <meta name="description" content="Collect, organize, and share photographs from your special events with event albums and QR code access." />
+    <meta name="author" content="EchoMoments" />
+
+    <meta property="og:title" content="EchoMoments" />
+    <meta property="og:description" content="Capture & Share Your Event Memories" />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@echo_moments" />
+    <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+
+    {% comment %} {% block extra_css %}{% endblock extra_css %} {% endcomment %}
+
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  </head>
+
+  <body>
+    <div id="root">
+      <!-- Navigation -->
+      <nav class="navbar">
+        <div class="echo-container navbar-container">
+          <div class="logo">
+            <div class="logo-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M9 22H15C20 22 22 20 22 15V9C22 4 20 2 15 2H9C4 2 2 4 2 9V15C2 20 4 22 9 22Z" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M9 10C10.1046 10 11 9.10457 11 8C11 6.89543 10.1046 6 9 6C7.89543 6 7 6.89543 7 8C7 9.10457 7.89543 10 9 10Z" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M2.67 18.95L7.6 15.64C8.39 15.11 9.53 15.17 10.24 15.78L10.57 16.07C11.35 16.74 12.61 16.74 13.39 16.07L17.55 12.5C18.33 11.83 19.59 11.83 20.37 12.5L22 13.9" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <span class="logo-text">EchoMoments</span>
+          </div>
+          
+          <!-- Desktop Navigation -->
+          <div class="desktop-nav">
+            <a href="{% url 'home' %}" class="nav-link">Home</a>
+            <a href="{% url 'events:join_event' %}" class="nav-link">Join Event</a>
+            {% comment %} <a href="{% url 'album' %}" class="nav-link">My Albums</a> {% endcomment %}
+            <a href="{% url 'host' %}" class="nav-link">Host an Event</a>
+            <button class="echo-button-primary signin-btn" >Sign In</button>
+          </div>
+          
+          <!-- Mobile Menu Button -->
+          <button class="mobile-menu-button" aria-label="Open menu">
+            <i class="fas fa-bars" id="menu-icon"></i>
+          </button>
+        </div>
+        
+        <!-- Mobile Navigation -->
+        <div class="mobile-nav" id="mobileNav">
+          <div class="echo-container mobile-nav-container">
+            <a href="{% url 'home' %}" class="nav-link">Home</a>
+            <a href="{% url 'events:join_event' %}" class="nav-link">Join Event</a>
+            <a href="{% url 'album' %}" class="nav-link">My Albums</a>
+            <a href="{% url 'host' %}" class="nav-link">Host an Event</a>
+            <button class="echo-button-primary full-width signin-btn">Sign In</button>
+          </div>
+        </div>
+      </nav>
+
+      <main>
+        <!-- Hero Section -->
+        <section class="hero-section">
+          <div class="echo-container">
+            <div class="hero-content">
+              <h1>Capture &amp; Share Your Event Memories</h1>
+              
+              <p class="hero-subtitle">
+                Collect, organize, and share photographs from your special events with event albums and QR code access.
+              </p>
+              
+              <div class="hero-buttons">
+                <button class="echo-button-primary" id ="host-event-button">
+                  <i class="fas fa-camera"></i>
+                  Host an Event
+                </button>
+                <button class="echo-button-outline"id ="join-event-button">
+                  <i class="fas fa-users"></i>
+                  Join an Event
+                </button>
+              </div>
+              
+              <!-- Decoration Elements -->
+              <div class="decoration circle-1"></div>
+              <div class="decoration circle-2"></div>
+              <div class="decoration circle-3"></div>
+            </div>
+          </div>
+          
+          <!-- Curved divider -->
+          <div class="curved-divider">
+            <svg viewBox="0 0 1200 120" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M985.66,92.83C906.67,72,823.78,31,743.84,14.19c-82.26-17.34-168.06-16.33-250.45.39-57.84,11.73-114,31.07-172,41.86A600.21,600.21,0,0,1,0,27.35V120H1200V95.8C1132.19,118.92,1055.71,111.31,985.66,92.83Z"></path>
+            </svg>
+          </div>
+        </section>
+        
+        <!-- Features Section -->
+        <section class="features-section">
+          <div class="echo-container">
+            <div class="section-header">
+              <h2>Create Lasting Memories</h2>
+              <p>EchoMoments makes it simple to collect, organize and share photos from your special events.</p>
+            </div>
+            
+            <div class="features-grid">
+              <div class="feature-card">
+                <div class="feature-icon">
+                  <i class="fas fa-qrcode"></i>
+                </div>
+                <h3>QR Code Access</h3>
+                <p>Simply scan the event's QR code to instantly join and start sharing your photos.</p>
+              </div>
+              
+              <div class="feature-card">
+                <div class="feature-icon">
+                  <i class="fas fa-camera"></i>
+                </div>
+                <h3>Event Photo Albums</h3>
+                <p>Guests can share and browse photographs in one event album.</p>
+              </div>
+              
+              <div class="feature-card">
+                <div class="feature-icon">
+                  <i class="fas fa-users"></i>
+                </div>
+                <h3>Custom Access Controls</h3>
+                <p>Event hosts can set permissions for who can view, upload, download, or comment.</p>
+              </div>
+              
+              <div class="feature-card">
+                <div class="feature-icon">
+                  <i class="fas fa-heart"></i>
+                </div>
+                <h3>Professional Services</h3>
+                <p>Hire photographers and create physical albums directly through our platform.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+        
+        <!-- Join Event Section -->
+        <section id="join" class="join-section">
+          <div class="echo-container">
+            <div class="section-header">
+              <h2>Join an Event</h2>
+              <p>Access a shared photo collection by scanning the event's QR code or entering an event code.</p>
+            </div>
+            
+            <div class="qr-scanner-container">
+              <div class="qr-scanner">
+                <div class="qr-scanner-header">
+                  <h3>Join an Event</h3>
+                  <p>Scan the QR code provided by the event host to access and contribute to the event's photo album.</p>
+                </div>
+                
+                <div class="qr-scanner-body">
+                  <div class="qr-placeholder">
+                    <i class="fas fa-qrcode"></i>
+                    <p>Camera access required</p>
+                    <button class="echo-button-primary" id="scanQrBtn">
+                      Scan QR Code
+                    </button>
+                  </div>
+                </div>
+                
+                <div class="qr-scanner-footer">
+                  <p>Don't have a QR code?</p>
+                  <button class="echo-button-outline" id="enterCodeBtn">
+                    Enter Event Code
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+        
+        <!-- My Albums Section -->
+        {% comment %} <section id="albums" class="albums-section">
+          <div class="echo-container">
+            <div class="section-header-with-action">
+              <div>
+                <h2>My Albums</h2>
+                <p>Browse through your event collections and relive your special memories.</p>
+              </div>
+              <button class="echo-button-ghost">View All Albums</button>
+            </div>
+            
+            <div class="album-grid">
+              <!-- Album Cards will be inserted here by JavaScript -->
+            </div>
+          </div>
+        </section> {% endcomment %}
+        
+        <!-- Host an Event Section -->
+        <section id="host" class="host-section">
+          <div class="echo-container">
+            <div class="host-grid">
+              <div class="host-content">
+                <h2>Host Your Next Event</h2>
+                <p>Create a centralized album for your event where all guests can contribute their photos.
+                Set permissions, customize access, and optionally hire professional photography services.</p>
+                
+                <div class="host-buttons">
+                  <button class="echo-button-white">
+                    <i class="fas fa-image"></i>
+                    Create Event Album
+                  </button>
+                  <button class="echo-button-white-outline">
+                    <i class="fas fa-upload"></i>
+                    Upload Photos
+                  </button>
+                </div>
+              </div>
+              
+              <div class="host-images">
+                <div class="host-image-grid">
+                  <div class="host-image large-image">
+                    <img src="https://images.unsplash.com/photo-1511795409834-ef04bbd61622?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Wedding event">
+                  </div>
+                  <div class="host-image small-image">
+                    <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Company retreat">
+                  </div>
+                  <div class="host-image small-image">
+                    <img src="https://images.unsplash.com/photo-1539635278303-d4002c07eae3?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Birthday party">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+        
+        <!-- Testimonial/CTA Section -->
+        <section class="cta-section">
+          <div class="echo-container">
+            <h2>Ready to Capture Moments Together?</h2>
+            <p>Join thousands of event hosts and guests who are already using EchoMoments to create shared memories that last forever.</p>
+            <button class="echo-button-primary cta-button">Get Started Free</button>
+          </div>
+        </section>
+      </main>
+      
+{% comment %} {% endblock body %} {% endcomment %}
+ <!-- Footer -->
+      <footer class="footer">
+        <div class="echo-container">
+          <div class="footer-grid">
+            <div class="footer-about">
+              <div class="logo">
+                <div class="logo-icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M9 22H15C20 22 22 20 22 15V9C22 4 20 2 15 2H9C4 2 2 4 2 9V15C2 20 4 22 9 22Z" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M9 10C10.1046 10 11 9.10457 11 8C11 6.89543 10.1046 6 9 6C7.89543 6 7 6.89543 7 8C7 9.10457 7.89543 10 9 10Z" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M2.67 18.95L7.6 15.64C8.39 15.11 9.53 15.17 10.24 15.78L10.57 16.07C11.35 16.74 12.61 16.74 13.39 16.07L17.55 12.5C18.33 11.83 19.59 11.83 20.37 12.5L22 13.9" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </div>
+                <span class="logo-text">EchoMoments</span>
+              </div>
+              <p>EchoMoments helps you capture, organize and share photos from your special events in event albums with QR code access.</p>
+            </div>
+            
+            <div class="footer-links">
+              <h4>Features</h4>
+              <ul>
+                <li><a href="{% url 'events:join_event' %}">Join Event</a></li>
+                <li><a href="{% url 'album' %}">My Albums</a></li>
+                <li><a href="{% url 'host' %}">Host an Event</a></li>
+                <li><a href="#">Upload Photos</a></li>
+              </ul>
+            </div>
+            
+            <div class="footer-links">
+              <h4>Company</h4>
+              <ul>
+                <li><a href="#">About Us</a></li>
+                <li><a href="#">Privacy Policy</a></li>
+                <li><a href="#">Terms of Service</a></li>
+                <li><a href="#">Contact Us</a></li>
+              </ul>
+            </div>
+          </div>
+          
+          <div class="footer-bottom">
+            <p>&copy; <span id="currentYear"></span> EchoMoments. All rights reserved.</p>
+            <div class="social-links">
+              <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+              <a href="https://www.instagram.com/echomoments.in/" aria-label="Instagram" target = "blank"><i class="fab fa-instagram"></i></a>
+              <a href="#" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+            </div>
+          </div>
+        </div>
+      </footer>
+    </div>
+
+    <!-- Event code modal -->
+    <div class="modal" id="eventCodeModal">
+      <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <h3>Enter Event Code</h3>
+        <p>Please enter the event code provided by the host:</p>
+        <input type="text" class="event-code-input" placeholder="Event code">
+        <button class="echo-button-primary">Join Event</button>
+      </div>
+    </div>
+
+    <!-- Toast notification container -->
+    <div class="toast-container" id="toastContainer"></div>
+   <script src="{% static 'js/main.js' %}"></script>
+

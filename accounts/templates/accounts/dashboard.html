@@ -1,0 +1,327 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard - EchoMoments{% endblock title %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+{% endblock extra_css %}
+
+{% block body %}
+
+<!-- Main Content -->
+<main class="main-content">
+    <div class="container">
+
+        <!-- Welcome Section -->
+        <div class="welcome-section animate-fade-in">
+            <h2 class="page-title">Welcome back, {{ user.first_name|default:user.username }}! 👋</h2>
+            <p class="page-subtitle">Here's what's happening with your photo events today.</p>
+        </div>
+
+        <!-- Profile Card -->
+        <div class="echo-card profile-card animate-fade-in">
+            <div class="profile-content">
+                <div class="profile-info">
+                    <div class="avatar">
+                        {% if user.profile.avatar %}
+                            <img src="{{ user.profile.avatar.url }}" alt="{{ user.get_full_name }}" class="avatar-img">
+                        {% endif %}
+                        <div class="avatar-fallback">
+                            {{ user.first_name.0|default:user.username.0 }}{{ user.last_name.0|default:'' }}
+                        </div>
+                    </div>
+
+                    <div class="profile-details">
+                        <h3 class="profile-name">{{ user.get_full_name|default:user.username }}</h3>
+                        <p class="profile-email">{{ user.email }}</p>
+
+                        <div class="profile-badges">
+                            <span class="badge {% if user.is_staff %}badge-admin{% else %}badge-user{% endif %}">
+                                {% if user.is_staff %}Admin{% else %}User{% endif %}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <a href="{% url 'accounts:profile' %}" class="echo-button-outline profile-btn">
+                    <i class="fas fa-cog"></i>
+                    Profile
+                </a>
+            </div>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid">
+
+            <div class="stat-card animate-slide-up" style="animation-delay: 0ms;">
+                <div class="stat-content">
+                    <p class="stat-label">Hosted Events</p>
+                    <p class="stat-number">{{ stats.hosted_events }}</p>
+                    <p class="stat-trend">+{{ stats.hosted_events_trend }} this month</p>
+                </div>
+                <div class="stat-icon"><i class="fas fa-calendar"></i></div>
+            </div>
+
+            <div class="stat-card animate-slide-up" style="animation-delay: 100ms;">
+                <div class="stat-content">
+                    <p class="stat-label">Joined Events</p>
+                    <p class="stat-number">{{ stats.joined_events }}</p>
+                    <p class="stat-trend">+{{ stats.joined_events_trend }} this month</p>
+                </div>
+                <div class="stat-icon"><i class="fas fa-users"></i></div>
+            </div>
+
+            <div class="stat-card animate-slide-up" style="animation-delay: 200ms;">
+                <div class="stat-content">
+                    <p class="stat-label">Total Photos</p>
+                    <p class="stat-number">{{ stats.total_photos }}</p>
+                    <p class="stat-trend">+{{ stats.photos_trend }} this week</p>
+                </div>
+                <div class="stat-icon"><i class="fas fa-image"></i></div>
+            </div>
+
+            <div class="stat-card animate-slide-up" style="animation-delay: 300ms;">
+                <div class="stat-content">
+                    <p class="stat-label">Total Guests</p>
+                    <p class="stat-number">{{ stats.total_guests }}</p>
+                    <p class="stat-trend">+{{ stats.guests_trend }} this week</p>
+                </div>
+                <div class="stat-icon"><i class="fas fa-camera"></i></div>
+            </div>
+
+        </div>
+
+        <!-- Middle Section -->
+        <div class="middle-section">
+
+            <!-- Quick Actions -->
+            <div class="quick-actions-card echo-card animate-slide-up" style="animation-delay: 200ms;">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fas fa-bolt"></i> Quick Actions</h3>
+                </div>
+
+                <div class="card-content quick-actions">
+
+                    <a href="{% url 'events:create_event' %}" class="action-btn echo-button-primary">
+                        <div class="action-icon"><i class="fas fa-plus"></i></div>
+                        <div class="action-text">
+                            <p class="action-title">Host Event</p>
+                            <p class="action-description">Create a new photo sharing event</p>
+                        </div>
+                    </a>
+
+                    <a href="{% url 'events:join_event' %}" class="action-btn echo-button-outline">
+                        <div class="action-icon"><i class="fas fa-users"></i></div>
+                        <div class="action-text">
+                            <p class="action-title">Join Event</p>
+                            <p class="action-description">Join an event with code</p>
+                        </div>
+                    </a>
+
+                    <a href="#" class="action-btn echo-button-ghost">
+                        <div class="action-icon"><i class="fas fa-upload"></i></div>
+                        <div class="action-text">
+                            <p class="action-title">Upload Photos</p>
+                            <p class="action-description">Add photos to your events</p>
+                        </div>
+                    </a>
+
+                </div>
+            </div>
+
+            <!-- Notifications -->
+            <div class="notifications-card echo-card animate-slide-up" style="animation-delay: 100ms;">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-bell"></i> Notifications
+                    </h3>
+                </div>
+
+                <div class="card-content notifications">
+                    {% for notification in notifications %}
+                        <div class="notification-item {% if not notification.is_read %}unread{% endif %}">
+                            <div class="notification-icon {{ notification.type }}">
+                                <i class="fas fa-bell"></i>
+                            </div>
+                            <div class="notification-content">
+                                <p class="notification-title">{{ notification.title }}</p>
+                                <p class="notification-message">{{ notification.message }}</p>
+                                <p class="notification-time">{{ notification.created_at|timesince }} ago</p>
+                            </div>
+                            {% if not notification.is_read %}
+                                <div class="notification-dot"></div>
+                            {% endif %}
+                        </div>
+                    {% empty %}
+                        <div class="text-center" style="padding: 2rem;">
+                            <i class="fas fa-bell" style="font-size: 2rem; opacity: 0.4; margin-bottom: 1rem;"></i>
+                            <p>No new notifications</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Section -->
+        <div class="bottom-section">
+            <div class="events-section">
+
+                <!-- Hosted Events -->
+                <div class="events-card echo-card animate-slide-up" style="animation-delay: 300ms;">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-calendar"></i>
+                            Hosted Events
+                            <span class="badge badge-secondary">{{ hosted_events.count }}</span>
+                        </h3>
+                    </div>
+
+                    <div class="card-content events-list">
+
+                        {% for event in hosted_events %}
+                            <div class="event-item">
+
+                                <div class="event-info">
+
+                                    <h4 class="event-name">{{ event.event_name }}</h4>
+
+                                    <div class="event-meta">
+                                        <p class="event-date">{{ event.event_date|date:"M d, Y" }}</p>
+                                    </div>
+
+                                    <div class="event-details">
+                                        <span class="event-code">{{ event.event_code }}</span>
+
+                                        <button class="copy-btn" onclick="copyEventCode('{{ event.event_code }}')">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+
+                                        <div class="event-participants">
+                                            <i class="fas fa-users"></i>
+                                            {{ event.active_members_count }}
+                                        </div>
+                                    </div>
+
+                                </div>
+
+                                <a href="{% url 'events:event_detail' event.event_code %}"
+                                   class="echo-button-outline event-open-btn">
+                                    <i class="fas fa-external-link-alt"></i> Open
+                                </a>
+
+                            </div>
+                        {% empty %}
+                            <div class="text-center" style="padding: 2rem;">
+                                <i class="fas fa-calendar" style="opacity: 0.4; font-size: 2rem;"></i>
+                                <p>No hosted events yet</p>
+                            </div>
+                        {% endfor %}
+
+                    </div>
+                </div>
+
+                <!-- Joined Events -->
+                <div class="events-card echo-card animate-slide-up" style="animation-delay: 400ms;">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-users"></i>
+                            Joined Events
+                            <span class="badge badge-secondary">{{ joined_events.count }}</span>
+                        </h3>
+                    </div>
+
+                    <div class="card-content events-list">
+
+                        {% for event in joined_events %}
+
+                            <div class="event-item">
+
+                                <div class="event-info">
+
+                                    <h4 class="event-name">{{ event.event_name }}</h4>
+
+                                    <div class="event-meta">
+                                        <p class="event-date">{{ event.event_date|date:"M d, Y" }}</p>
+                                    </div>
+
+                                    <div class="event-details">
+
+                                        <span class="event-code">{{ event.event_code }}</span>
+
+                                        <button class="copy-btn" onclick="copyEventCode('{{ event.event_code }}')">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+
+                                        <div class="event-participants">
+                                            <i class="fas fa-users"></i>
+                                            {{ event.active_members_count }}
+                                        </div>
+                                    </div>
+
+                                </div>
+
+                                <a href="{% url 'events:event_detail' event.event_code %}"
+                                   class="echo-button-outline event-open-btn">
+                                    <i class="fas fa-external-link-alt"></i>
+                                    Open
+                                </a>
+
+                            </div>
+
+                        {% empty %}
+                            <div class="text-center" style="padding: 2rem;">
+                                <i class="fas fa-users" style="opacity: 0.4; font-size: 2rem;"></i>
+                                <p>No joined events yet</p>
+                            </div>
+                        {% endfor %}
+
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Activity Feed -->
+            <div class="activity-card echo-card animate-slide-up" style="animation-delay: 500ms;">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fas fa-chart-line"></i> Recent Activity</h3>
+                </div>
+
+                <div class="card-content activity-feed">
+
+                    {% for activity in activities %}
+                        <div class="activity-item">
+                            <div class="activity-icon"><i class="fas fa-bolt"></i></div>
+                            <div class="activity-content">
+                                <p class="activity-title">{{ activity.title }}</p>
+                                <p class="activity-description">{{ activity.description }}</p>
+                                <p class="activity-time">{{ activity.created_at|timesince }} ago</p>
+                            </div>
+                        </div>
+                    {% empty %}
+                        <div class="text-center" style="padding: 2rem;">
+                            <i class="fas fa-chart-line" style="opacity: 0.4; font-size: 2rem;"></i>
+                            <p>No recent activity</p>
+                        </div>
+                    {% endfor %}
+
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- Toast -->
+<div class="toast" id="copyToast">
+    <i class="fas fa-check"></i> Code copied to clipboard!
+</div>
+
+{% endblock body %}
+
+{% block extra_js %}
+<script>window.ECHO_NOTIFICATIONS_URL="{% url 'accounts:notifications_api' %}";</script>
+<script src="{% static 'js/dashboard.js' %}"></script>
+{% endblock %}
+
+
