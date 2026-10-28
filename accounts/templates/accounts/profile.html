@@ -125,7 +125,7 @@
 
                 {% if user.profile.profile_pic %}
 
-                    <img src="{{ user.profile.profile_pic.url }}"
+                    <img src="{% url 'accounts:profile_photo' %}"
                          alt="{{ user.get_full_name|default:user.username }}"
                          class="profile-avatar">
 

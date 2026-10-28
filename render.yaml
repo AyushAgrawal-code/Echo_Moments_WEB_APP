@@ -1,0 +1,35 @@
+services:
+  - type: web
+    name: echomoments-demo
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements-deploy.txt && python scripts/download_face_models.py && python manage.py collectstatic --noinput
+    startCommand: python manage.py migrate --noinput && python manage.py serve_demo
+    healthCheckPath: /
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.10
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: USE_S3
+        value: "True"
+      - key: DATABASE_URL
+        sync: false
+      - key: AWS_STORAGE_BUCKET_NAME
+        sync: false
+      - key: AWS_S3_ENDPOINT_URL
+        sync: false
+      - key: AWS_S3_REGION_NAME
+        sync: false
+      - key: AWS_S3_ADDRESSING_STYLE
+        value: path
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+      - key: FACE_ENCRYPTION_KEY
+        sync: false
+      - key: FACE_MATCH_THRESHOLD
+        value: "0.363"

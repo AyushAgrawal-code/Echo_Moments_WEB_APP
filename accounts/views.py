@@ -9,6 +9,9 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.utils.timezone import now
 from django.http import JsonResponse
+from django.http import FileResponse, HttpResponse
+import mimetypes
+import os
 from django.db.models import Count, Q
 from django.views.decorators.http import require_POST
 
@@ -357,6 +360,23 @@ def profile_view(request):
             "profile": profile,
         }
     )
+
+
+@login_required
+def profile_photo(request):
+    """Serve the signed-in user's profile image from private storage."""
+    profile = getattr(request.user, "profile", None)
+    if not profile or not profile.profile_pic:
+        return HttpResponse("Profile photo not found.", status=404)
+    response = FileResponse(
+        profile.profile_pic.open("rb"),
+        as_attachment=False,
+        filename=os.path.basename(profile.profile_pic.name),
+        content_type=mimetypes.guess_type(profile.profile_pic.name)[0] or "application/octet-stream",
+    )
+    response["Cache-Control"] = "private, no-store"
+    response["X-Content-Type-Options"] = "nosniff"
+    return response
 
 
 # -----------------------------------------------------------

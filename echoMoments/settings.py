@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 import os
+import importlib.util
+from django.core.exceptions import ImproperlyConfigured
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -22,11 +24,75 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ.get("SECRET_KEY", "django-insecure-local-development-only-change-me")
+FACE_ENCRYPTION_KEY = os.environ.get("FACE_ENCRYPTION_KEY", "")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get("DEBUG", "True").lower() in ("1", "true", "yes")
+WHITE_NOISE_AVAILABLE = importlib.util.find_spec("whitenoise") is not None
+if not DEBUG and not WHITE_NOISE_AVAILABLE:
+    raise ImproperlyConfigured("Install the declared WhiteNoise dependency for production static files.")
 
 ALLOWED_HOSTS = [host.strip() for host in os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1,testserver").split(",") if host.strip()]
+if os.environ.get("RENDER_EXTERNAL_HOSTNAME"):
+    ALLOWED_HOSTS.append(os.environ["RENDER_EXTERNAL_HOSTNAME"])
+
+if not DEBUG:
+    if SECRET_KEY == "django-insecure-local-development-only-change-me":
+        raise ImproperlyConfigured("Set a unique SECRET_KEY before running with DEBUG=False.")
+    if not os.environ.get("DATABASE_URL"):
+        raise ImproperlyConfigured("Set DATABASE_URL for a persistent production database.")
+
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+SECURE_SSL_REDIRECT = os.environ.get("SECURE_SSL_REDIRECT", "false" if DEBUG else "true").lower() in ("1", "true", "yes")
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
+X_FRAME_OPTIONS = "DENY"
+if not DEBUG:
+    SECURE_HSTS_SECONDS = int(os.environ.get("SECURE_HSTS_SECONDS", "3600"))
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = False
+
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip() for origin in os.environ.get("CSRF_TRUSTED_ORIGINS", "").split(",") if origin.strip()
+]
+if os.environ.get("RENDER_EXTERNAL_HOSTNAME"):
+    CSRF_TRUSTED_ORIGINS.append("https://" + os.environ["RENDER_EXTERNAL_HOSTNAME"])
+
+USE_S3 = os.environ.get("USE_S3", "False").lower() in ("1", "true", "yes")
+AWS_STORAGE_BUCKET_NAME = os.environ.get("AWS_STORAGE_BUCKET_NAME", "")
+AWS_S3_ENDPOINT_URL = os.environ.get("AWS_S3_ENDPOINT_URL", "") or None
+AWS_S3_REGION_NAME = os.environ.get("AWS_S3_REGION_NAME", "auto")
+AWS_S3_ADDRESSING_STYLE = os.environ.get("AWS_S3_ADDRESSING_STYLE", "auto")
+AWS_ACCESS_KEY_ID = os.environ.get("AWS_ACCESS_KEY_ID", "")
+AWS_SECRET_ACCESS_KEY = os.environ.get("AWS_SECRET_ACCESS_KEY", "")
+AWS_S3_CUSTOM_DOMAIN = None
+AWS_DEFAULT_ACL = None
+AWS_QUERYSTRING_AUTH = True
+AWS_S3_FILE_OVERWRITE = False
+AWS_S3_OBJECT_PARAMETERS = {"CacheControl": "private, max-age=0, no-store"}
+if USE_S3:
+    if not AWS_STORAGE_BUCKET_NAME or not AWS_ACCESS_KEY_ID or not AWS_SECRET_ACCESS_KEY:
+        raise ImproperlyConfigured("Set the private S3 bucket name and credentials when USE_S3=True.")
+if not DEBUG:
+    if not USE_S3:
+        raise ImproperlyConfigured("Enable USE_S3=True so production uploads use persistent private storage.")
+    if not AWS_S3_ENDPOINT_URL or not os.environ.get("AWS_S3_REGION_NAME"):
+        raise ImproperlyConfigured("Set the private S3 endpoint and region for production storage.")
+    if not FACE_ENCRYPTION_KEY:
+        raise ImproperlyConfigured("Set a stable FACE_ENCRYPTION_KEY for production face templates.")
+    try:
+        from cryptography.fernet import Fernet
+        Fernet(FACE_ENCRYPTION_KEY.encode("ascii"))
+    except (ImportError, ValueError, UnicodeEncodeError) as exc:
+        raise ImproperlyConfigured("FACE_ENCRYPTION_KEY must be a valid Fernet key in production.") from exc
+
+# Event uploads and face-enrollment selfies are limited to 10 MB and sent one
+# file per request. Keep accepted images in memory so an enrollment selfie is
+# never written to Django's temporary-upload directory.
+FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024
+DATA_UPLOAD_MAX_NUMBER_FILES = 1
 
 
 # Application definition
@@ -46,6 +112,8 @@ INSTALLED_APPS = [
     'events.apps.EventsConfig',
     'home.apps.HomeConfig',
 ]
+if USE_S3:
+    INSTALLED_APPS.append("storages")
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -56,6 +124,8 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+if WHITE_NOISE_AVAILABLE:
+    MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
 
 ROOT_URLCONF = 'echoMoments.urls'
 
@@ -80,12 +150,23 @@ WSGI_APPLICATION = 'echoMoments.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+DATABASE_URL = os.environ.get("DATABASE_URL")
+if DATABASE_URL:
+    import dj_database_url
+    DATABASES = {
+        "default": dj_database_url.config(
+            default=DATABASE_URL,
+            conn_max_age=600,
+            ssl_require=not DEBUG,
+        )
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 
 # Password validation
@@ -123,6 +204,17 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {
+        "BACKEND": (
+            "whitenoise.storage.CompressedManifestStaticFilesStorage"
+            if WHITE_NOISE_AVAILABLE
+            else "django.contrib.staticfiles.storage.StaticFilesStorage"
+        )
+    },
+}
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -137,6 +229,11 @@ STATICFILES_DIRS =[
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+FACE_DETECTOR_MODEL = os.environ.get("FACE_DETECTOR_MODEL", str(BASE_DIR / "models" / "face_detection_yunet_2023mar.onnx"))
+FACE_RECOGNIZER_MODEL = os.environ.get("FACE_RECOGNIZER_MODEL", str(BASE_DIR / "models" / "face_recognition_sface_2021dec.onnx"))
+FACE_MODEL_VERSION = os.environ.get("FACE_MODEL_VERSION", "opencv-yunet-2023mar-sface-2021dec-v1")
+FACE_MATCH_THRESHOLD = float(os.environ.get("FACE_MATCH_THRESHOLD", "0.363"))
 
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 

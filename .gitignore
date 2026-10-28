@@ -16,6 +16,9 @@ env/
 *.sqlite3-*
 *.bak
 media/
+private_uploads/
+private_media/
+models/*.onnx
 
 # Generated bundle and build output
 EchoMoments-MVP.zip

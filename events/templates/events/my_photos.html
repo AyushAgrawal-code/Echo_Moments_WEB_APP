@@ -1,0 +1,60 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>My Photos · {{ event.event_name }}</title>
+  <link rel="stylesheet" href="{% static 'css/css.css' %}">
+</head>
+<body>
+<header class="header"><div class="container"><div class="header-content">
+  <a href="{% url 'accounts:dashboard' %}" class="logo">EchoMoments</a>
+  <nav class="nav"><a href="{% url 'events:event_detail' event.event_code %}">Back to event</a><a href="{% url 'accounts:dashboard' %}">My Dashboard</a></nav>
+</div></div></header>
+<main class="container" style="padding:2rem 0">
+  <h1>My Photos</h1>
+  <p>Possible matches from <strong>{{ event.event_name }}</strong>. Face matching can miss photos or suggest a wrong match, so review this personal album.</p>
+
+  {% if messages %}<section class="echo-card" role="status">{% for message in messages %}<p>{{ message }}</p>{% endfor %}</section>{% endif %}
+  {% if face_error %}<p class="echo-card" role="alert">{{ face_error }}</p>{% endif %}
+
+  <section class="echo-card">
+    {% if face_enrolled %}
+      <h2>Face matching is on</h2>
+      <p>Your selfie was processed in memory. EchoMoments stores an encrypted face template for this event and uses it to suggest photos that may include you. You can turn this off and erase your template and suggestions at any time.</p>
+      <form method="post" action="{% url 'events:revoke_face_enrollment' event.event_code %}">{% csrf_token %}<button class="echo-button-ghost" type="submit">Turn off and delete my face template</button></form>
+    {% else %}
+      <h2>Find your photos</h2>
+      <p>Choose a clear selfie with only you in it. EchoMoments processes it on the server, keeps only an encrypted face template for this event, and discards the selfie. Matching is optional; event members who do not enroll are not searched as a person.</p>
+      <form method="post" enctype="multipart/form-data" action="{% url 'events:enroll_face' event.event_code %}">
+        {% csrf_token %}
+        <p><label for="selfie">Your selfie</label><br><input id="selfie" type="file" name="selfie" accept="image/jpeg,image/png,image/gif,image/webp" required></p>
+        <p><label><input type="checkbox" name="face_consent" required> I agree to create a face template and compare it with photos in this event to suggest my photos. I understand results can be wrong, and I can turn this off and delete the template later.</label></p>
+        <button class="echo-button-primary" type="submit">Find my photos</button>
+      </form>
+    {% endif %}
+  </section>
+
+  {% if pending_count %}<p role="status">Scanning {{ pending_count }} event photo(s). Refresh this page in a little while to see new matches.</p>{% endif %}
+  {% if failed_count %}<p>{{ failed_count }} photo scan(s) need attention.{% if is_host %}<form method="post" action="{% url 'events:retry_face_indexing' event.event_code %}" style="display:inline">{% csrf_token %}<button type="submit" class="echo-button-outline">Retry failed scans</button></form>{% endif %}</p>{% endif %}
+  <section>
+    <h2>Suggested photos ({{ matches_count }})</h2>
+    {% if event.allow_download and matches %}<p><a class="echo-button-primary" href="{% url 'events:download_my_photos' event.event_code %}">Download all suggested photos</a></p>{% elif not event.allow_download %}<p>Downloads are disabled by the event host.</p>{% endif %}
+    {% if event.allow_download and matches %}<form id="selectedPhotosForm" method="post" action="{% url 'events:download_my_photos' event.event_code %}" style="margin:1rem 0">{% csrf_token %}<button class="echo-button-outline" type="submit">Download selected photos</button></form>{% endif %}
+    {% if matches %}<div class="photo-grid">
+      {% for match in matches %}
+        <article class="echo-card">
+          <a href="{% url 'events:view_photo' event.event_code match.photo.id %}" target="_blank" rel="noopener"><img src="{% url 'events:view_photo' event.event_code match.photo.id %}" alt="Suggested event photo" style="max-width:100%;height:auto"></a>
+          <p>{{ match.photo.uploaded_at|date:'M d, Y H:i' }} · Suggested match</p>
+          {% if event.allow_download %}<label><input type="checkbox" name="photo_ids" value="{{ match.photo_id }}" form="selectedPhotosForm"> Include in selected ZIP</label><br>{% endif %}
+          {% if event.allow_download %}<a href="{% url 'events:download_photo' event.event_code match.photo.id %}">Download photo</a>{% endif %}
+          <form method="post" action="{% url 'events:hide_face_match' event.event_code match.photo.id %}" style="margin-top:.5rem">{% csrf_token %}<button type="submit" class="echo-button-ghost">This is not me</button></form>
+        </article>
+      {% endfor %}
+    </div>{% else %}<p>No suggested photos yet. If the event has photos, leave this page and come back after scanning finishes.</p>{% endif %}
+    {% if match_page.has_other_pages %}<nav aria-label="Personal album pages" style="margin:1rem 0">{% if match_page.has_previous %}<a class="echo-button-outline" href="?page={{ match_page.previous_page_number }}">Previous</a>{% endif %}<span>Page {{ match_page.number }} of {{ match_page.paginator.num_pages }}</span>{% if match_page.has_next %}<a class="echo-button-outline" href="?page={{ match_page.next_page_number }}">Next</a>{% endif %}</nav>{% endif %}
+  </section>
+</main>
+</body>
+</html>

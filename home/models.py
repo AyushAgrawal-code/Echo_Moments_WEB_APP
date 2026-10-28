@@ -2,6 +2,7 @@
 from django.db import models
 from datetime import timedelta
 from datetime import datetime
+from events.storage import PrivatePhotoStorage
 
 class Signup(models.Model):
     name = models.CharField(max_length=100)
@@ -42,7 +43,7 @@ class Event(models.Model):
     allow_download = models.BooleanField(default=True)
     allow_tag = models.BooleanField(default=False)
     allow_comment = models.BooleanField(default=False)
-    cover_photo = models.ImageField(upload_to='event_covers/', blank=True, null=True)
+    cover_photo = models.ImageField(storage=PrivatePhotoStorage(), upload_to='event_covers/', blank=True, null=True)
     theme_color = models.CharField(max_length=20, choices=THEME_CHOICES, default='emerald')
     event_code = models.CharField(max_length=20, unique=True)
     
@@ -59,4 +60,3 @@ class Event(models.Model):
     def __str__(self):
         return self.event_name
 
-   

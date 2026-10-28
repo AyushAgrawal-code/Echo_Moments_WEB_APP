@@ -13,6 +13,7 @@ urlpatterns = [
 
     # Profile
     path("profile/", views.profile_view, name="profile"),
+    path("profile/photo/", views.profile_photo, name="profile_photo"),
     path("delete/", views.delete_account, name="delete_account"),
 
     # Dashboard
