@@ -1034,6 +1034,118 @@ body {
   }
 }
 
+@media (max-width: 640px) {
+  .main-content,
+  .main-content > .container {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .welcome-section,
+  .welcome-section > *,
+  .profile-details,
+  .stat-card,
+  .stat-content {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .welcome-section .page-title,
+  .welcome-section .page-subtitle,
+  .profile-name,
+  .profile-email,
+  .stat-trend {
+    overflow-wrap: anywhere;
+  }
+
+  .stats-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.85rem;
+  }
+
+  .stat-card {
+    padding: 1rem;
+  }
+
+  .stat-content {
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+  }
+
+  .stat-trend {
+    max-width: 8rem;
+    text-align: right;
+  }
+
+  .profile-content {
+    min-width: 0;
+    padding: 1rem;
+  }
+
+  .action-cards,
+  .bottom-section,
+  .middle-section {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .event-item,
+  .activity-item {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .toast {
+    right: 0.75rem;
+    bottom: 0.75rem;
+    max-width: calc(100vw - 1.5rem);
+  }
+}
+
+@media (max-width: 768px) {
+  .stats-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .stat-card,
+  .stat-content {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .stat-content {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 3rem;
+    grid-template-rows: auto auto auto;
+    align-items: center;
+    gap: 0 0.75rem;
+  }
+
+  .stat-label {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .stat-number {
+    grid-column: 1;
+    grid-row: 2;
+    margin: 0.2rem 0;
+  }
+
+  .stat-trend {
+    grid-column: 1;
+    grid-row: 3;
+    max-width: 100%;
+    text-align: left;
+    overflow-wrap: anywhere;
+  }
+
+  .stat-icon {
+    grid-column: 2;
+    grid-row: 1 / span 3;
+    justify-self: end;
+  }
+}
+
 /* Loading States */
 .loading {
   animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;

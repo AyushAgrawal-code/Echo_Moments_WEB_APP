@@ -1,6 +1,6 @@
 from datetime import datetime
+import logging
 import os
-import mimetypes
 import uuid
 import tempfile
 import zipfile
@@ -18,15 +18,40 @@ from django.utils import timezone
 from django.views.decorators.http import require_http_methods, require_POST
 
 from .models import Event, EventMember, FaceIndexJob, FaceMatch, Photo, UploadJob
+from .image_validation import (
+    SUPPORTED_IMAGE_FORMATS,
+    safe_image_filename,
+    validate_image_upload,
+)
 from .face_matching import (
     FaceEnrollmentError,
     FaceMatchingUnavailable,
+    MAX_IMAGE_PIXELS,
     encrypt_embedding,
     extract_enrollment_embedding,
     model_version,
 )
 
-MAX_UPLOAD_SIZE = 10 * 1024 * 1024
+logger = logging.getLogger(__name__)
+ALBUM_PAGE_SIZES = (20, 30, 50)
+
+
+def _stored_image_type(image_file):
+    """Return an allowlisted MIME type and extension inferred from image bytes."""
+    try:
+        with image_file.open("rb") as source:
+            with Image.open(source) as image:
+                return SUPPORTED_IMAGE_FORMATS.get(image.format)
+    except (UnidentifiedImageError, OSError, SyntaxError, Image.DecompressionBombError):
+        return None
+
+
+def _album_page_size(request):
+    try:
+        requested = int(request.GET.get("page_size", "20"))
+    except (TypeError, ValueError):
+        requested = 20
+    return requested if requested in ALBUM_PAGE_SIZES else 20
 
 
 def _membership(event, user):
@@ -56,6 +81,10 @@ def _member_upload_limit(event, membership):
     if event.member_photo_limit_enabled:
         return event.default_member_photo_limit
     return None
+
+
+def _has_active_face_enrollment(membership):
+    return bool(membership and membership.face_consent_at and membership.face_embedding_ciphertext)
 
 
 @login_required
@@ -103,6 +132,13 @@ def create_event(request):
         theme = request.POST.get("theme_color", "emerald")
         if privacy not in dict(Event.PRIVACY_CHOICES) or theme not in dict(Event.THEME_CHOICES):
             return JsonResponse({"success": False, "error": "Invalid event settings."}, status=400)
+        cover_photo = request.FILES.get("cover_photo")
+        if cover_photo:
+            try:
+                _, extension = validate_image_upload(cover_photo)
+                cover_photo.name = safe_image_filename(cover_photo.name, extension)
+            except ValidationError as exc:
+                return JsonResponse({"success": False, "error": "; ".join(exc.messages)}, status=400)
         try:
             with transaction.atomic():
                 event = Event.objects.create(
@@ -111,7 +147,7 @@ def create_event(request):
                     location=request.POST.get("location", "").strip(),
                     description=request.POST.get("description", "").strip(),
                     privacy=privacy, theme_color=theme,
-                    cover_photo=request.FILES.get("cover_photo"),
+                    cover_photo=cover_photo,
                     allow_upload="allow_upload" in request.POST,
                     allow_download="allow_download" in request.POST,
                     allow_tag="allow_tag" in request.POST,
@@ -131,19 +167,28 @@ def event_detail(request, event_code):
         if not event.is_active:
             return render(request, "events/event_unavailable.html", {"event": event}, status=410)
         return HttpResponse("You do not have access to this event.", status=403)
-    members = event.memberships.filter(is_active=True).select_related("user").annotate(
-        photo_count=Count("user__uploaded_photos", filter=Q(user__uploaded_photos__event=event))
-    )
+    is_host = _is_host(event, request.user)
+    active_members = event.memberships.filter(is_active=True)
+    active_member_count = active_members.count()
+    member_page = None
+    if is_host:
+        member_queryset = active_members.select_related("user").annotate(
+            photo_count=Count("user__uploaded_photos", filter=Q(user__uploaded_photos__event=event))
+        ).order_by("-joined_at", "pk")
+        member_page = Paginator(member_queryset, 50).get_page(request.GET.get("members_page"))
+        members = member_page.object_list
+    else:
+        members = ()
     photo_queryset = event.photos.order_by("-uploaded_at", "-pk")
     stored_photo_count = photo_queryset.count()
-    photo_page = Paginator(photo_queryset, 40).get_page(request.GET.get("page"))
+    page_size = _album_page_size(request)
+    photo_page = Paginator(photo_queryset, page_size).get_page(request.GET.get("page"))
     photos = photo_page.object_list
     pending_jobs = event.upload_jobs.filter(
         status__in=[UploadJob.Status.QUEUED, UploadJob.Status.PROCESSING]
     )
     pending_count = pending_jobs.count()
     host_photo_count = Photo.objects.filter(event=event, uploaded_by=event.created_by).count()
-    is_host = _is_host(event, request.user)
     membership = _membership(event, request.user)
     host_capacity_used = host_photo_count + pending_jobs.filter(uploader=event.created_by).count()
     guest_capacity_used = stored_photo_count - host_photo_count + pending_jobs.exclude(uploader=event.created_by).count()
@@ -178,15 +223,18 @@ def event_detail(request, event_code):
     context = {"event": event, "members": members, "photos": photos,
                "is_host": is_host,
                "membership": membership,
-               "face_enrolled": bool(membership and membership.face_consent_at and membership.face_embedding_ciphertext),
+               "member_page": member_page,
+        "face_enrolled": _has_active_face_enrollment(membership),
                "my_face_match_count": FaceMatch.objects.filter(photo__event=event, user=request.user, is_hidden=False).count(),
                "can_upload_now": not upload_block_reason,
                "upload_block_reason": upload_block_reason,
                "upload_jobs": upload_jobs,
                "photo_page": photo_page,
+               "photo_page_size": page_size,
+               "photo_page_sizes": ALBUM_PAGE_SIZES,
                "stats": {
                    "total_photos": stored_photo_count,
-                   "active_guests": members.count(),
+                   "active_guests": active_member_count,
                    "recent_uploads": photo_queryset[:3],
                    "capacity_used": stored_photo_count + pending_count,
                    "host_capacity_used": host_capacity_used,
@@ -230,21 +278,17 @@ def upload_photo(request, event_code):
         return JsonResponse({"success": False, "error": "Upload each photo as a separate queue item."}, status=400)
 
     image = files[0]
-    if image.size > MAX_UPLOAD_SIZE:
-        return JsonResponse({"success": False, "error": f"{image.name} exceeds the 10 MB limit."}, status=400)
     try:
-        with Image.open(image) as verified_image:
-            if verified_image.format not in ("JPEG", "PNG", "GIF", "WEBP"):
-                return JsonResponse({"success": False, "error": f"{image.name} is not a supported image."}, status=400)
-            verified_image.verify()
-    except (UnidentifiedImageError, OSError, SyntaxError, Image.DecompressionBombError):
-        return JsonResponse({"success": False, "error": f"{image.name} is not a valid image."}, status=400)
-    image.seek(0)
+        image_info = validate_image_upload(image)
+    except ValidationError as exc:
+        status_code = 413 if exc.code == "image_too_many_pixels" else 400
+        return JsonResponse({"success": False, "error": "; ".join(exc.messages)}, status=status_code)
 
     try:
         upload_key = uuid.UUID(request.POST.get("client_upload_id", ""))
     except (ValueError, TypeError, AttributeError):
         upload_key = uuid.uuid4()
+    safe_original_name = safe_image_filename(image.name, image_info[1])
 
     existing = UploadJob.objects.filter(
         event=event, uploader=request.user, idempotency_key=upload_key
@@ -303,7 +347,7 @@ def upload_photo(request, event_code):
             job = UploadJob(
                 event=locked_event,
                 uploader=request.user,
-                original_name=os.path.basename(image.name)[:255],
+                original_name=safe_original_name,
                 idempotency_key=upload_key,
                 priority=100 if is_host else 0,
                 available_at=timezone.now(),
@@ -582,11 +626,14 @@ def view_photo(request, event_code, photo_id):
     photo = get_object_or_404(Photo, event=event, pk=photo_id)
     if not photo.image:
         return HttpResponse("Photo is unavailable.", status=404)
-    content_type = mimetypes.guess_type(photo.image.name)[0] or "application/octet-stream"
+    image_info = _stored_image_type(photo.image)
+    if not image_info:
+        return HttpResponse("Photo is unavailable.", status=404)
+    content_type, extension = image_info
     response = FileResponse(
         photo.image.open("rb"),
         as_attachment=False,
-        filename=os.path.basename(photo.image.name),
+        filename=f"photo-{photo.pk}.{extension}",
         content_type=content_type,
     )
     response["Cache-Control"] = "private, no-store"
@@ -604,25 +651,32 @@ def download_photo(request, event_code, photo_id):
     photo = get_object_or_404(Photo, event=event, pk=photo_id)
     if not photo.image:
         return HttpResponse("Photo is unavailable.", status=404)
-    response = FileResponse(photo.image.open("rb"), as_attachment=True, filename=os.path.basename(photo.image.name))
+    image_info = _stored_image_type(photo.image)
+    if not image_info:
+        return HttpResponse("Photo is unavailable.", status=404)
+    content_type, extension = image_info
+    response = FileResponse(
+        photo.image.open("rb"),
+        as_attachment=True,
+        filename=f"photo-{photo.pk}.{extension}",
+        content_type=content_type,
+    )
     response["Cache-Control"] = "private, no-store"
     response["X-Content-Type-Options"] = "nosniff"
     return response
 
 
-@login_required
-def my_photos(request, event_code):
-    event = get_object_or_404(Event, event_code=event_code)
-    membership = _membership(event, request.user)
-    if not membership or not _can_view(event, request.user):
-        return HttpResponse("Event membership required.", status=403)
+def _my_photos_context(request, event, membership, face_error=""):
     match_queryset = FaceMatch.objects.filter(
         user=request.user,
         photo__event=event,
         is_hidden=False,
     ).select_related("photo").order_by("-photo__uploaded_at", "-pk")
+    if not _has_active_face_enrollment(membership):
+        match_queryset = FaceMatch.objects.none()
     match_count = match_queryset.count()
-    match_page = Paginator(match_queryset, 40).get_page(request.GET.get("page"))
+    page_size = _album_page_size(request)
+    match_page = Paginator(match_queryset, page_size).get_page(request.GET.get("page"))
     pending_count = FaceIndexJob.objects.filter(
         photo__event=event,
         status__in=[FaceIndexJob.Status.QUEUED, FaceIndexJob.Status.PROCESSING],
@@ -631,17 +685,29 @@ def my_photos(request, event_code):
         photo__event=event,
         status=FaceIndexJob.Status.FAILED,
     ).count()
-    return render(request, "events/my_photos.html", {
+    return {
         "event": event,
         "membership": membership,
         "matches": match_page.object_list,
         "match_page": match_page,
+        "photo_page_size": page_size,
+        "photo_page_sizes": ALBUM_PAGE_SIZES,
         "matches_count": match_count,
         "pending_count": pending_count,
         "failed_count": failed_count,
-        "face_enrolled": bool(membership.face_consent_at and membership.face_embedding_ciphertext),
+        "face_enrolled": _has_active_face_enrollment(membership),
         "is_host": _is_host(event, request.user),
-    })
+        "face_error": face_error,
+    }
+
+
+@login_required
+def my_photos(request, event_code):
+    event = get_object_or_404(Event, event_code=event_code)
+    membership = _membership(event, request.user)
+    if not membership or not _can_view(event, request.user):
+        return HttpResponse("Event membership required.", status=403)
+    return render(request, "events/my_photos.html", _my_photos_context(request, event, membership))
 
 
 @login_required
@@ -658,27 +724,20 @@ def enroll_face(request, event_code):
     if not selfie:
         messages.error(request, "Choose a clear selfie to find your photos.")
         return redirect("events:my_photos", event_code=event.event_code)
-    if selfie.size > MAX_UPLOAD_SIZE:
-        messages.error(request, "The selfie must be 10 MB or smaller.")
-        return redirect("events:my_photos", event_code=event.event_code)
     try:
-        with Image.open(selfie) as verified_image:
-            if verified_image.format not in ("JPEG", "PNG", "GIF", "WEBP"):
-                raise FaceEnrollmentError("Choose a JPEG, PNG, GIF, or WebP selfie.")
-            verified_image.verify()
-        selfie.seek(0)
+        validate_image_upload(selfie)
         embedding = extract_enrollment_embedding(selfie.read())
         ciphertext = encrypt_embedding(embedding)
     except FaceMatchingUnavailable as exc:
-        return render(request, "events/my_photos.html", {
-            "event": event,
-            "membership": membership,
-            "matches": FaceMatch.objects.filter(user=request.user, photo__event=event, is_hidden=False).select_related("photo")[:40],
-            "matches_count": FaceMatch.objects.filter(user=request.user, photo__event=event, is_hidden=False).count(),
-            "face_enrolled": bool(membership.face_consent_at and membership.face_embedding_ciphertext),
-            "face_error": str(exc),
-        }, status=503)
-    except (FaceEnrollmentError, UnidentifiedImageError, OSError, SyntaxError, Image.DecompressionBombError) as exc:
+        logger.error("Face enrollment unavailable for event %s: %s", event.pk, exc)
+        context = _my_photos_context(
+            request,
+            event,
+            membership,
+            face_error="Face matching is temporarily unavailable on this server. Your selfie was not saved. Please try again later.",
+        )
+        return render(request, "events/my_photos.html", context, status=503)
+    except (FaceEnrollmentError, ValidationError, UnidentifiedImageError, OSError, SyntaxError, Image.DecompressionBombError) as exc:
         messages.error(request, str(exc) or "The selfie could not be read.")
         return redirect("events:my_photos", event_code=event.event_code)
 
@@ -758,8 +817,9 @@ def retry_face_indexing(request, event_code):
 @require_POST
 def hide_face_match(request, event_code, photo_id):
     event = get_object_or_404(Event, event_code=event_code)
-    if not _can_view(event, request.user):
-        return HttpResponse("Event membership required.", status=403)
+    membership = _membership(event, request.user)
+    if not _can_view(event, request.user) or not _has_active_face_enrollment(membership):
+        return HttpResponse("Active face enrollment required.", status=403)
     match = get_object_or_404(FaceMatch, photo__event=event, photo_id=photo_id, user=request.user)
     match.is_hidden = True
     match.save(update_fields=["is_hidden"])
@@ -770,8 +830,9 @@ def hide_face_match(request, event_code, photo_id):
 @require_http_methods(["GET", "POST"])
 def download_my_photos(request, event_code):
     event = get_object_or_404(Event, event_code=event_code)
-    if not _can_view(event, request.user):
-        return HttpResponse("Event membership required.", status=403)
+    membership = _membership(event, request.user)
+    if not _can_view(event, request.user) or not _has_active_face_enrollment(membership):
+        return HttpResponse("Active face enrollment required.", status=403)
     if not event.allow_download:
         return HttpResponse("Downloads are disabled for this event.", status=403)
     visible_matches = Photo.objects.filter(
@@ -798,10 +859,13 @@ def download_my_photos(request, event_code):
         for photo in photos:
             if not photo.image:
                 continue
-            safe_name = os.path.basename(photo.image.name) or f"photo-{photo.pk}.jpg"
             try:
+                image_info = _stored_image_type(photo.image)
+                if not image_info:
+                    continue
+                _, extension = image_info
                 with photo.image.open("rb") as source:
-                    zipped.writestr(f"{photo.pk}_{safe_name}", source.read())
+                    zipped.writestr(f"photo-{photo.pk}.{extension}", source.read())
             except OSError:
                 continue
     archive.seek(0)

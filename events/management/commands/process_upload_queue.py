@@ -1,7 +1,9 @@
 import time
 import uuid
 from datetime import timedelta
+from pathlib import Path
 
+from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import close_old_connections, models, transaction
 from django.utils import timezone
@@ -114,38 +116,52 @@ class Command(BaseCommand):
                 self.stderr.write(f"Could not clean terminal staged upload {job_id}: {cleanup_error}")
 
     def _claim_next_job(self, guest_wait_seconds):
-        now = timezone.now()
-        available = UploadJob.objects.filter(
-            status=UploadJob.Status.QUEUED,
-            available_at__lte=now,
-        )
-        overdue_guest = available.filter(
-            priority=0,
-            created_at__lte=now - timedelta(seconds=guest_wait_seconds),
-        ).order_by("created_at").first()
-        candidate = overdue_guest or available.order_by("-priority", "created_at").first()
-        if candidate is None:
-            return None
+        # A busy worker pool can race for the same first row. Retry selection
+        # after a lost conditional claim instead of leaving this worker idle.
+        for _ in range(16):
+            now = timezone.now()
+            available = UploadJob.objects.filter(
+                status=UploadJob.Status.QUEUED,
+                available_at__lte=now,
+            )
+            candidate = available.order_by("-priority", "created_at").first()
+            if candidate is None:
+                return None
 
-        # Conditional update prevents two workers from claiming the same item.
-        # On PostgreSQL this is safe across workers; SQLite is suitable only for
-        # a single local worker.
-        claim_token = uuid.uuid4()
-        claimed = UploadJob.objects.filter(
-            pk=candidate.pk,
-            status=UploadJob.Status.QUEUED,
-            available_at__lte=now,
-        ).update(
-            status=UploadJob.Status.PROCESSING,
-            attempts=candidate.attempts + 1,
-            claim_token=claim_token,
-            updated_at=now,
-            error_message="",
-        )
-        if not claimed:
-            return None
-        candidate.refresh_from_db()
-        return candidate
+            if candidate.priority > 0:
+                overdue_guest = available.filter(
+                    priority=0,
+                    created_at__lte=now - timedelta(seconds=guest_wait_seconds),
+                ).order_by("created_at").first()
+                if overdue_guest and not UploadJob.objects.filter(
+                    priority=0,
+                    attempts__gt=0,
+                    updated_at__gte=now - timedelta(seconds=guest_wait_seconds),
+                ).exists():
+                    # Hosts remain the normal first choice. When host work is
+                    # continuously queued, allow one aged guest job per wait
+                    # interval so guests do not starve indefinitely.
+                    candidate = overdue_guest
+
+            # Conditional update prevents two workers from claiming the same
+            # item. PostgreSQL safely arbitrates across worker processes.
+            claim_token = uuid.uuid4()
+            claimed = UploadJob.objects.filter(
+                pk=candidate.pk,
+                status=UploadJob.Status.QUEUED,
+                available_at__lte=now,
+            ).update(
+                status=UploadJob.Status.PROCESSING,
+                attempts=candidate.attempts + 1,
+                claim_token=claim_token,
+                updated_at=now,
+                error_message="",
+            )
+            if claimed:
+                candidate.refresh_from_db()
+                return candidate
+
+        return None
 
     def _process(self, job):
         new_photo = None
@@ -155,26 +171,27 @@ class Command(BaseCommand):
             ).exists():
                 self._cancel(job)
                 return
-            with job.source_file.open("rb") as source:
-                with transaction.atomic():
-                    locked_job = UploadJob.objects.select_for_update().get(pk=job.pk)
-                    if locked_job.status != UploadJob.Status.PROCESSING or locked_job.claim_token != job.claim_token:
-                        return
-                    new_photo = Photo(event=locked_job.event, uploaded_by=locked_job.uploader)
-                    new_photo.image.save(locked_job.original_name, source, save=False)
-                    new_photo.save()
-                    new_photo.uploaded_at = locked_job.created_at
-                    new_photo.save(update_fields=["uploaded_at"])
-                    FaceIndexJob.objects.get_or_create(
-                        photo=new_photo,
-                        defaults={"available_at": timezone.now()},
-                    )
-                    locked_job.photo = new_photo
-                    locked_job.status = UploadJob.Status.COMPLETE
-                    locked_job.claim_token = None
-                    locked_job.finished_at = timezone.now()
-                    locked_job.error_message = ""
-                    locked_job.save(update_fields=["photo", "status", "claim_token", "finished_at", "error_message", "updated_at"])
+            with transaction.atomic():
+                locked_job = UploadJob.objects.select_for_update().get(pk=job.pk)
+                if locked_job.status != UploadJob.Status.PROCESSING or locked_job.claim_token != job.claim_token:
+                    return
+                new_photo = Photo(event=locked_job.event, uploaded_by=locked_job.uploader)
+                if not self._copy_staged_object(locked_job, new_photo):
+                    with locked_job.source_file.open("rb") as source:
+                        new_photo.image.save(locked_job.original_name, source, save=False)
+                new_photo.save()
+                new_photo.uploaded_at = locked_job.created_at
+                new_photo.save(update_fields=["uploaded_at"])
+                FaceIndexJob.objects.get_or_create(
+                    photo=new_photo,
+                    defaults={"available_at": timezone.now()},
+                )
+                locked_job.photo = new_photo
+                locked_job.status = UploadJob.Status.COMPLETE
+                locked_job.claim_token = None
+                locked_job.finished_at = timezone.now()
+                locked_job.error_message = ""
+                locked_job.save(update_fields=["photo", "status", "claim_token", "finished_at", "error_message", "updated_at"])
             try:
                 locked_job.source_file.delete(save=False)
             except Exception as cleanup_error:
@@ -184,6 +201,35 @@ class Command(BaseCommand):
             if new_photo and new_photo.image:
                 new_photo.image.delete(save=False)
             self._retry_or_fail(job, str(exc))
+
+    def _copy_staged_object(self, job, photo):
+        """Copy between private S3 prefixes server-side when they share a bucket."""
+        if not getattr(settings, "USE_S3", False):
+            return False
+
+        source_storage = job.source_file.storage
+        destination_storage = photo.image.storage
+        bucket_name = getattr(source_storage, "bucket_name", None)
+        if not bucket_name or bucket_name != getattr(destination_storage, "bucket_name", None):
+            return False
+
+        source_normalize = getattr(source_storage, "_normalize_name", None)
+        destination_normalize = getattr(destination_storage, "_normalize_name", None)
+        if not callable(source_normalize) or not callable(destination_normalize):
+            return False
+
+        extension = Path(job.original_name).suffix.lower() or ".jpg"
+        destination_name = f"event_photos/{uuid.uuid4().hex}{extension}"
+        source_key = source_normalize(job.source_file.name)
+        destination_key = destination_normalize(destination_name)
+        source_storage.connection.meta.client.copy_object(
+            Bucket=bucket_name,
+            Key=destination_key,
+            CopySource={"Bucket": bucket_name, "Key": source_key},
+            MetadataDirective="COPY",
+        )
+        photo.image.name = destination_name
+        return True
 
     def _mark_failed(self, job, message):
         updated = UploadJob.objects.filter(pk=job.pk, status=UploadJob.Status.PROCESSING, claim_token=job.claim_token).update(

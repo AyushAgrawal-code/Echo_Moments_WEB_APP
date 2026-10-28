@@ -116,7 +116,7 @@ class Command(BaseCommand):
                 with photo.image.open("rb") as source:
                     image_bytes = source.read()
                 image_embeddings = extract_face_embeddings(image_bytes)
-                threshold = float(getattr(settings, "FACE_MATCH_THRESHOLD", 0.363))
+                threshold = float(getattr(settings, "FACE_MATCH_THRESHOLD", 0.5))
                 for member in members:
                     if member.face_model_version != model_version():
                         # A model change requires the member to enroll again to

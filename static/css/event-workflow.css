@@ -1,0 +1,335 @@
+/* Shared layout for the event, host, and personal-photo pages. */
+.event-workflow {
+  min-width: 320px;
+}
+
+.event-workflow .header-content {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+}
+
+.event-workflow .nav {
+  flex: 0 1 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem 1rem;
+  min-width: 0;
+}
+
+.event-workflow .nav form {
+  margin: 0;
+}
+
+.event-workflow .event-main {
+  width: 100%;
+  max-width: 76rem;
+  padding: clamp(1.25rem, 4vw, 2.5rem) clamp(1rem, 3vw, 1.5rem) 3rem;
+  overflow-wrap: anywhere;
+}
+
+.event-workflow .event-intro {
+  margin: 0 0 1.25rem;
+  padding: clamp(1.25rem, 4vw, 2rem);
+  border: 1px solid var(--echo-border);
+  border-radius: var(--echo-radius);
+  background: linear-gradient(135deg, #fff 0%, #f1f8f5 100%);
+}
+
+.event-workflow .event-intro h1,
+.event-workflow .event-main > h1 {
+  margin: 0 0 0.5rem;
+  color: var(--echo-deep-purple);
+  font-size: clamp(1.75rem, 5vw, 2.5rem);
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+.event-workflow .event-meta,
+.event-workflow .event-description,
+.event-workflow .event-summary {
+  margin-top: 0.35rem;
+  color: #52655f;
+}
+
+.event-workflow .event-summary {
+  margin-top: 1rem;
+}
+
+.event-workflow .event-main > .echo-card,
+.event-workflow #suggested-photos {
+  min-width: 0;
+  margin: 1rem 0;
+  padding: clamp(1rem, 3vw, 1.5rem);
+  overflow-wrap: anywhere;
+}
+
+.event-workflow .event-main > .echo-card h2,
+.event-workflow #suggested-photos h2,
+.event-workflow #album h2 {
+  margin: 0 0 0.5rem;
+  color: var(--echo-deep-purple);
+  font-size: clamp(1.2rem, 4vw, 1.5rem);
+  line-height: 1.25;
+}
+
+.event-workflow .event-main p {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.event-workflow form {
+  min-width: 0;
+}
+
+.event-workflow input,
+.event-workflow select,
+.event-workflow textarea {
+  max-width: 100%;
+}
+
+.event-workflow input[type="file"] {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  padding: 0.35rem 0;
+}
+
+.event-workflow #uploadForm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.event-workflow #uploadForm input[type="file"],
+.event-workflow #uploadStatus {
+  flex: 1 1 100%;
+}
+
+.event-workflow #uploadStatus {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.event-workflow .selfie-source-switch,
+.event-workflow .selfie-camera-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin: 0.75rem 0;
+}
+
+.event-workflow .selfie-source-switch [aria-pressed="true"] {
+  border-color: var(--echo-green, #19785f);
+  background: #eaf5f1;
+}
+
+.event-workflow .selfie-source-help,
+.event-workflow .selfie-camera-status {
+  color: #52655f;
+}
+
+.event-workflow .selfie-camera-stage {
+  width: min(100%, 34rem);
+  overflow: hidden;
+  border-radius: 0.75rem;
+  background: #17211e;
+}
+
+.event-workflow .selfie-camera-stage video {
+  display: block;
+  width: 100%;
+  max-height: 65vh;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  transform: scaleX(-1);
+}
+
+.event-workflow .selfie-preview-panel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin: 0.75rem 0;
+}
+
+.event-workflow [hidden] {
+  display: none !important;
+}
+
+.event-workflow .selfie-preview-panel img {
+  display: block;
+  width: min(100%, 20rem);
+  max-height: 24rem;
+  object-fit: contain;
+  border: 1px solid var(--echo-border);
+  border-radius: 0.6rem;
+  background: #f5f3ef;
+}
+
+.event-workflow #photoLimitsForm {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+  align-items: end;
+  gap: 0.9rem 1rem;
+}
+
+.event-workflow #photoLimitsForm label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.event-workflow #photoLimitsForm input[type="number"] {
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid var(--echo-border);
+  border-radius: 0.5rem;
+  font: inherit;
+}
+
+.event-workflow #photoLimitsForm label:has(input[type="checkbox"]) {
+  flex-direction: row;
+  align-items: flex-start;
+}
+
+.event-workflow #photoLimitsForm label:has(input[type="checkbox"]) input {
+  flex: 0 0 auto;
+  margin-top: 0.35rem;
+}
+
+.event-workflow #photoLimitsForm button,
+.event-workflow #photoLimitsStatus {
+  align-self: center;
+}
+
+.event-workflow #eventLink {
+  display: block;
+  width: 100%;
+  min-height: 2.75rem;
+  margin-top: 0.75rem;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid var(--echo-border);
+  border-radius: 0.5rem;
+}
+
+.event-workflow #members > div {
+  min-width: 0;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--echo-border);
+}
+
+.event-workflow #members > div:last-of-type {
+  border-bottom: 0;
+}
+
+.event-workflow #album {
+  min-width: 0;
+  margin-top: 1.25rem;
+  padding: clamp(1rem, 3vw, 1.5rem);
+  border: 1px solid var(--echo-border);
+  border-radius: var(--echo-radius);
+  background: #fff;
+}
+
+.event-workflow #album > form,
+.event-workflow #suggested-photos > form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.event-workflow .photo-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+  gap: 0.85rem;
+  margin-top: 1rem;
+}
+
+.event-workflow .photo-grid > .echo-card {
+  min-width: 0;
+  padding: 0.75rem;
+}
+
+.event-workflow .photo-grid img {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+}
+
+.event-workflow #uploadQueue {
+  padding-left: 1.25rem;
+  overflow-wrap: anywhere;
+}
+
+.event-workflow #eventQRCode {
+  max-width: 100%;
+  overflow: auto;
+}
+
+.event-workflow #suggested-photos .echo-card {
+  min-width: 0;
+}
+
+.event-workflow #suggested-photos label {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 520px) {
+  .event-workflow .header-content {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .event-workflow .logo {
+    align-self: center;
+  }
+
+  .event-workflow .nav {
+    width: 100%;
+    justify-content: center;
+    gap: 0.5rem 0.85rem;
+  }
+
+  .event-workflow .nav a,
+  .event-workflow .nav button {
+    font-size: 0.9rem;
+  }
+
+  .event-workflow .event-main {
+    padding-inline: 0.75rem;
+  }
+
+  .event-workflow .event-main > .echo-card,
+  .event-workflow #album,
+  .event-workflow #suggested-photos {
+    padding: 1rem;
+  }
+
+  .event-workflow .photo-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.6rem;
+  }
+
+  .event-workflow .photo-grid > .echo-card {
+    padding: 0.5rem;
+  }
+
+  .event-workflow .echo-button-primary,
+  .event-workflow .echo-button-outline,
+  .event-workflow .echo-button-ghost {
+    max-width: 100%;
+    white-space: normal;
+  }
+
+  .event-workflow .selfie-source-switch > button,
+  .event-workflow .selfie-camera-controls > button {
+    flex: 1 1 9rem;
+  }
+}

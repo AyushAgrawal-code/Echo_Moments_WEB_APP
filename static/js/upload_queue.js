@@ -6,6 +6,7 @@
   const submitButton = form.querySelector("button[type='submit'], button:not([type])");
   const status = document.getElementById("uploadStatus");
   let list = document.getElementById("uploadQueue");
+  const maxParallelUploads = 3;
 
   if (!list) {
     list = document.createElement("ul");
@@ -15,6 +16,20 @@
   }
 
   const wait = (ms) => new Promise((resolve) => window.setTimeout(resolve, ms));
+
+  async function runWithConcurrency(items, limit, callback) {
+    let nextIndex = 0;
+    let successes = 0;
+    const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
+      while (nextIndex < items.length) {
+        const index = nextIndex;
+        nextIndex += 1;
+        if (await callback(items[index])) successes += 1;
+      }
+    });
+    await Promise.all(workers);
+    return successes;
+  }
 
   function makeUploadId() {
     if (window.crypto && typeof window.crypto.randomUUID === "function") {
@@ -132,8 +147,10 @@
   async function waitForProcessing(jobId, item) {
     const url = form.dataset.statusUrlTemplate.replace("00000000-0000-0000-0000-000000000000", jobId);
     const deadline = Date.now() + 10 * 60 * 1000;
+    let pollDelay = 500;
     while (Date.now() < deadline) {
-      await wait(1500);
+      await wait(pollDelay);
+      pollDelay = Math.min(2000, Math.round(pollDelay * 1.5));
       const response = await fetch(url, { headers: { "X-Requested-With": "XMLHttpRequest" } });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Could not check upload status.");
@@ -159,28 +176,20 @@
 
     submitButton.disabled = true;
     fileInput.disabled = true;
-    status.textContent = `Adding ${files.length} photo(s) to the upload queue…`;
-    const queued = [];
+    status.textContent = `Uploading ${files.length} photo(s) with up to ${maxParallelUploads} in parallel…`;
 
-    // Submit one file per request so one bad file cannot invalidate the rest.
-    for (const file of files) {
+    // Keep file requests independent, but do not make every member of a large batch wait in line.
+    const completed = await runWithConcurrency(files, maxParallelUploads, async (file) => {
       const item = addQueueItem(file);
       try {
         const result = await submitWithRetry(file, item);
-        queued.push({ jobId: result.job_id, item });
+        item.detail.textContent = "Uploaded; waiting for the private album save…";
+        return await waitForProcessing(result.job_id, item);
       } catch (error) {
         item.detail.textContent = error.message;
+        return false;
       }
-    }
-
-    let completed = 0;
-    for (const job of queued) {
-      try {
-        if (await waitForProcessing(job.jobId, job.item)) completed += 1;
-      } catch (error) {
-        job.item.detail.textContent = error.message;
-      }
-    }
+    });
 
     status.textContent = completed
       ? `${completed} photo(s) saved. Failed files can be selected again to retry.`

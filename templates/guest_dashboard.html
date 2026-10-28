@@ -78,10 +78,10 @@
                         <p>or drag and drop images here</p>
                         <small style="color: #6B7280; margin-top: 1rem; display: block;">
                             Maximum file size: 10MB per image<br>
-                            Supported formats: JPG, PNG, HEIC
+                            Supported formats: JPEG, PNG, GIF, WebP
                         </small>
                     </div>
-                    <input type="file" id="guestFileInput" multiple accept="image/*" style="display: none;" onchange="handleGuestUpload(this)">
+                    <input type="file" id="guestFileInput" multiple accept="image/jpeg,image/png,image/gif,image/webp" style="display: none;" onchange="handleGuestUpload(this)">
                     
                     <!-- Upload Progress -->
                     <div id="uploadProgress" class="hidden" style="margin-top: 1rem;">

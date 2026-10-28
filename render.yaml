@@ -4,7 +4,7 @@ services:
     runtime: python
     plan: free
     buildCommand: pip install -r requirements-deploy.txt && python scripts/download_face_models.py && python manage.py collectstatic --noinput
-    startCommand: python manage.py migrate --noinput && python manage.py serve_demo
+    startCommand: python manage.py migrate --noinput && python manage.py check_face_matching && python manage.py serve_demo
     healthCheckPath: /
     envVars:
       - key: PYTHON_VERSION
@@ -32,4 +32,4 @@ services:
       - key: FACE_ENCRYPTION_KEY
         sync: false
       - key: FACE_MATCH_THRESHOLD
-        value: "0.363"
+        value: "0.5"

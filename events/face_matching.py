@@ -4,9 +4,15 @@ import base64
 import hashlib
 import json
 from functools import lru_cache
+from io import BytesIO
 from pathlib import Path
 
 from django.conf import settings
+from PIL import Image, UnidentifiedImageError
+
+
+MAX_IMAGE_PIXELS = 30_000_000
+MIN_FACE_IMAGE_SIDE = 80
 
 
 class FaceMatchingUnavailable(RuntimeError):
@@ -49,8 +55,22 @@ def _models():
     return cv2, detector, recognizer
 
 
+def _validate_face_image_dimensions(image_bytes):
+    try:
+        with Image.open(BytesIO(image_bytes)) as source_image:
+            width, height = source_image.size
+    except (UnidentifiedImageError, OSError, Image.DecompressionBombError) as exc:
+        raise FaceEnrollmentError("The image could not be read.") from exc
+    if width < MIN_FACE_IMAGE_SIDE or height < MIN_FACE_IMAGE_SIDE:
+        raise FaceEnrollmentError("Use a larger, clearer photo for face matching.")
+    if width * height > MAX_IMAGE_PIXELS:
+        raise FaceEnrollmentError("Images larger than 30 megapixels aren't supported for face matching.")
+    return width, height
+
+
 def extract_face_embeddings(image_bytes):
     """Return normalized embeddings for every detected face in an image."""
+    width, height = _validate_face_image_dimensions(image_bytes)
     try:
         import numpy as np
     except ImportError as exc:
@@ -59,10 +79,12 @@ def extract_face_embeddings(image_bytes):
     image = cv2.imdecode(np.frombuffer(image_bytes, dtype=np.uint8), cv2.IMREAD_COLOR)
     if image is None:
         raise FaceEnrollmentError("The image could not be decoded.")
-    height, width = image.shape[:2]
-    if width < 80 or height < 80:
+    decoded_height, decoded_width = image.shape[:2]
+    if decoded_width * decoded_height > MAX_IMAGE_PIXELS:
+        raise FaceEnrollmentError("Images larger than 30 megapixels aren't supported for face matching.")
+    if decoded_width < MIN_FACE_IMAGE_SIDE or decoded_height < MIN_FACE_IMAGE_SIDE:
         raise FaceEnrollmentError("Use a larger, clearer photo for face matching.")
-    detector.setInputSize((width, height))
+    detector.setInputSize((decoded_width, decoded_height))
     _, detections = detector.detect(image)
     if detections is None or len(detections) == 0:
         return []

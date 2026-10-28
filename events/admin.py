@@ -1,7 +1,22 @@
 # events/admin.py
 from django.contrib import admin
+from django import forms
 import os
 from .models import Event, EventMember, FaceIndexJob, Photo, UploadJob
+from .image_validation import safe_image_filename, validate_image_upload
+
+
+class EventAdminForm(forms.ModelForm):
+    class Meta:
+        model = Event
+        fields = "__all__"
+
+    def clean_cover_photo(self):
+        image = self.cleaned_data.get("cover_photo")
+        if image and not getattr(image, "_committed", False):
+            _, extension = validate_image_upload(image)
+            image.name = safe_image_filename(image.name, extension)
+        return image
 
 
 # -----------------------------------------
@@ -37,6 +52,7 @@ class PhotoInline(admin.TabularInline):
 # -----------------------------------------
 @admin.register(Event)
 class EventAdmin(admin.ModelAdmin):
+    form = EventAdminForm
     list_display = ("event_name", "event_code", "event_date", "created_by", "privacy", "is_active", "max_photo_count")
     list_filter = ("privacy", "theme_color", "is_active")
     search_fields = ("event_name", "event_code", "created_by__username")

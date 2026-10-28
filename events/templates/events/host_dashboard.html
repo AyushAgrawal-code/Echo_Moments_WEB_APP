@@ -1,16 +1,65 @@
 {% load static %}
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{{ event.event_name }} · Host dashboard</title><link rel="stylesheet" href="{% static 'css/css.css' %}"></head><body>
-<header class="header"><div class="container"><div class="header-content"><a href="{% url 'accounts:dashboard' %}" class="logo">EchoMoments</a><nav class="nav"><a href="{% url 'accounts:dashboard' %}">Dashboard</a><a href="{% url 'events:join_event' %}">Join Event</a><form action="{% url 'accounts:logout' %}" method="post">{% csrf_token %}<button class="echo-button-outline">Sign Out</button></form></nav></div></div></header>
-<main class="container" style="padding:2rem 0"><h1>{{ event.event_name }}</h1><p>{{ event.event_date|date:'M d, Y' }}{% if event.location %} · {{ event.location }}{% endif %}</p><p>{{ event.description }}</p><p>Event code: <strong>{{ event.event_code }}</strong> · {{ stats.total_photos }} photos · {{ stats.active_guests }} members</p>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>{{ event.event_name }} · Host dashboard</title>
+  <link rel="stylesheet" href="{% static 'css/css.css' %}">
+  <link rel="stylesheet" href="{% static 'css/event-workflow.css' %}">
+</head>
+<body class="event-workflow">
+<header class="header">
+  <div class="container">
+    <div class="header-content">
+      <a href="{% url 'accounts:dashboard' %}" class="logo">EchoMoments</a>
+      <nav class="nav" aria-label="Main navigation">
+        <a href="{% url 'accounts:dashboard' %}">Dashboard</a>
+        <a href="{% url 'events:join_event' %}">Join Event</a>
+        <form action="{% url 'accounts:logout' %}" method="post">{% csrf_token %}<button class="echo-button-outline">Sign Out</button></form>
+      </nav>
+    </div>
+  </div>
+</header>
+<main class="container event-main">
+  <header class="event-intro">
+    <h1>{{ event.event_name }}</h1>
+    <p class="event-meta">{{ event.event_date|date:'M d, Y' }}{% if event.location %} · {{ event.location }}{% endif %}</p>
+    {% if event.description %}<p class="event-description">{{ event.description }}</p>{% endif %}
+    <p class="event-summary">Event code: <strong>{{ event.event_code }}</strong> · {{ stats.total_photos }} photos · {{ stats.active_guests }} members</p>
+  </header>
 <section class="echo-card"><h2>Your personal album</h2><p>Opt in with a selfie to find photos that may include you.</p><a class="echo-button-outline" href="{% url 'events:my_photos' event.event_code %}">My Photos ({{ my_face_match_count }})</a></section>
 {% if event.is_active %}<section class="echo-card"><h2>Manage event</h2><p>Uploads are {% if event.allow_upload %}enabled{% else %}disabled{% endif %}.</p><button id="toggleUploads" class="echo-button-outline">{% if event.allow_upload %}Disable uploads{% else %}Enable uploads{% endif %}</button> <button id="endEvent" class="echo-button-ghost">End event</button>
-{% if can_upload_now %}<form id="uploadForm" enctype="multipart/form-data" style="margin-top:1rem" data-upload-url="{% url 'events:upload_photo' event.event_code %}" data-status-url-template="{% url 'events:upload_job_status' event.event_code '00000000-0000-0000-0000-000000000000' %}" data-retry-url-template="{% url 'events:retry_upload_job' event.event_code '00000000-0000-0000-0000-000000000000' %}" data-csrf="{{ csrf_token }}"><input type="file" name="images" accept="image/jpeg,image/png,image/gif,image/webp" multiple required><button type="submit" class="echo-button-primary">Upload photos</button><span id="uploadStatus" role="status"></span></form>{% else %}<p>{{ upload_block_reason }}</p>{% endif %}</section>{% else %}<p>This event has ended. Existing photos remain available.</p>{% endif %}
+{% if can_upload_now %}<p>Each photo must be 10 MB or smaller and at most 30 megapixels.</p><form id="uploadForm" enctype="multipart/form-data" style="margin-top:1rem" data-upload-url="{% url 'events:upload_photo' event.event_code %}" data-status-url-template="{% url 'events:upload_job_status' event.event_code '00000000-0000-0000-0000-000000000000' %}" data-retry-url-template="{% url 'events:retry_upload_job' event.event_code '00000000-0000-0000-0000-000000000000' %}" data-csrf="{{ csrf_token }}"><input type="file" name="images" accept="image/jpeg,image/png,image/gif,image/webp" multiple required><button type="submit" class="echo-button-primary">Upload photos</button><span id="uploadStatus" role="status"></span></form>{% else %}<p>{{ upload_block_reason }}</p>{% endif %}</section>{% else %}<p>This event has ended. Existing photos remain available.</p>{% endif %}
 <section class="echo-card"><h2>Photo capacity</h2><p>Viewer access has no count limit. Blank limits are unlimited; queued uploads reserve capacity.</p><p>Used: {{ stats.capacity_used }} / {{ event.max_photo_count|default_if_none:'unlimited' }} total · host {{ stats.host_capacity_used }} / {{ event.host_photo_limit|default_if_none:'unlimited' }} · guests {{ stats.guest_capacity_used }} / {{ event.guest_photo_pool_limit|default_if_none:'unlimited' }}</p><form id="photoLimitsForm" data-url="{% url 'events:update_photo_limits' event.event_code %}" data-csrf="{{ csrf_token }}"><label>Event photo cap <input type="number" min="0" name="max_photo_count" value="{{ event.max_photo_count|default_if_none:'' }}"></label><label>Host photo cap <input type="number" min="0" name="host_photo_limit" value="{{ event.host_photo_limit|default_if_none:'' }}"></label><label>Shared guest pool <input type="number" min="0" name="guest_photo_pool_limit" value="{{ event.guest_photo_pool_limit|default_if_none:'' }}"></label><label><input type="checkbox" name="member_photo_limit_enabled" {% if event.member_photo_limit_enabled %}checked{% endif %}> Set a per-member guest cap</label><label>Default guest cap <input type="number" min="0" name="default_member_photo_limit" value="{{ event.default_member_photo_limit|default_if_none:'' }}"></label><button type="submit" class="echo-button-outline">Save capacity</button><span id="photoLimitsStatus" role="status"></span></form></section>
 <section class="echo-card"><h2>Share event</h2><p>Code <strong>{{ event.event_code }}</strong></p><button id="copyLink" class="echo-button-outline">Copy join link</button><button id="downloadQr" class="echo-button-outline">Download QR</button><div id="eventQRCode" style="margin:1rem"></div><input id="eventLink" readonly style="width:100%"></section>
-<section class="echo-card"><h2>Members</h2>{% for member in members %}<div style="display:flex;gap:1rem;align-items:center;margin:.5rem 0;flex-wrap:wrap"><span>{{ member.user.get_full_name|default:member.user.username }} ({{ member.role }}) · {{ member.photo_count }} uploaded</span>{% if member.user_id != request.user.id %}<form class="member-upload-limit-form" data-url="{% url 'events:update_member_photo_limit' event.event_code member.user_id %}" data-csrf="{{ csrf_token }}"><label><input type="checkbox" name="can_upload" {% if member.can_upload %}checked{% endif %}> Can upload</label><label>Member cap <input type="number" min="0" name="photo_limit_override" value="{{ member.photo_limit_override|default_if_none:'' }}" placeholder="Use default"></label><button type="submit">Save</button><span role="status"></span></form>{% endif %}{% if member.user_id != request.user.id and event.is_active %}<button class="remove-member" data-url="{% url 'events:remove_member' event.event_code member.user_id %}">Remove</button>{% endif %}</div>{% empty %}<p>No members yet.</p>{% endfor %}</section>
+<section id="members" class="echo-card">
+<h2>Members ({{ stats.active_guests }})</h2>
+{% for member in members %}
+<div style="display:flex;gap:1rem;align-items:center;margin:.5rem 0;flex-wrap:wrap">
+  <span>{{ member.user.get_full_name|default:member.user.username }} ({{ member.role }}) · {{ member.photo_count }} uploaded</span>
+  {% if member.user_id != request.user.id %}
+  <form class="member-upload-limit-form" data-url="{% url 'events:update_member_photo_limit' event.event_code member.user_id %}" data-csrf="{{ csrf_token }}">
+    <label><input type="checkbox" name="can_upload" {% if member.can_upload %}checked{% endif %}> Can upload</label>
+    <label>Member cap <input type="number" min="0" name="photo_limit_override" value="{{ member.photo_limit_override|default_if_none:'' }}" placeholder="Use default"></label>
+    <button type="submit">Save</button><span role="status"></span>
+  </form>
+  {% endif %}
+  {% if member.user_id != request.user.id and event.is_active %}<button class="remove-member" data-url="{% url 'events:remove_member' event.event_code member.user_id %}">Remove</button>{% endif %}
+</div>
+{% empty %}<p>No members yet.</p>
+{% endfor %}
+{% if member_page.has_other_pages %}
+<nav aria-label="Member pages" style="margin:1rem 0">
+  {% if member_page.has_previous %}<a class="echo-button-outline" href="?members_page={{ member_page.previous_page_number }}#members">Previous</a>{% endif %}
+  <span>Page {{ member_page.number }} of {{ member_page.paginator.num_pages }}</span>
+  {% if member_page.has_next %}<a class="echo-button-outline" href="?members_page={{ member_page.next_page_number }}#members">Next</a>{% endif %}
+</nav>
+{% endif %}
+</section>
 <section class="echo-card"><h2>Upload queue</h2><ul id="uploadQueue" aria-live="polite">{% for job in upload_jobs %}<li>{{ job.original_name }} — {{ job.get_status_display }}{% if job.error_message %}: {{ job.error_message }}{% endif %}{% if job.status == 'failed' and job.source_file %}<form method="post" action="{% url 'events:retry_upload_job' event.event_code job.idempotency_key %}" style="display:inline">{% csrf_token %}<button type="submit" class="echo-button-outline">Retry photo</button></form>{% endif %}</li>{% empty %}<li>No queued uploads.</li>{% endfor %}</ul></section>
-<section id="album"><h2>Album ({{ stats.total_photos }})</h2>{% if photos %}<div class="photo-grid">{% for photo in photos %}<article class="echo-card"><a href="{% url 'events:view_photo' event.event_code photo.id %}" target="_blank" rel="noopener"><img src="{% url 'events:view_photo' event.event_code photo.id %}" alt="Event photo" style="max-width:100%;height:auto"></a><p>{% if photo.uploaded_by %}{{ photo.uploaded_by.get_full_name|default:photo.uploaded_by.username }}{% else %}Member{% endif %}</p>{% if event.allow_download %}<a href="{% url 'events:download_photo' event.event_code photo.id %}">Download</a>{% endif %}<button class="delete-photo" data-url="{% url 'events:delete_photo' event.event_code photo.id %}">Delete</button></article>{% endfor %}</div>{% else %}<p>No photos shared yet.</p>{% endif %}
-{% if photo_page.has_other_pages %}<nav aria-label="Album pages" style="margin:1rem 0">{% if photo_page.has_previous %}<a class="echo-button-outline" href="?page={{ photo_page.previous_page_number }}#album">Previous</a>{% endif %}<span>Page {{ photo_page.number }} of {{ photo_page.paginator.num_pages }}</span>{% if photo_page.has_next %}<a class="echo-button-outline" href="?page={{ photo_page.next_page_number }}#album">Next</a>{% endif %}</nav>{% endif %}</section>
+<section id="album"><h2>Album ({{ stats.total_photos }})</h2><form method="get" action="#album" style="margin:1rem 0"><label for="photoPageSize">Photos per page</label> <select id="photoPageSize" name="page_size">{% for size in photo_page_sizes %}<option value="{{ size }}"{% if size == photo_page_size %} selected{% endif %}>{{ size }}</option>{% endfor %}</select>{% if member_page %}<input type="hidden" name="members_page" value="{{ member_page.number }}">{% endif %} <button class="echo-button-outline" type="submit">Apply</button></form>{% if photos %}<div class="photo-grid">{% for photo in photos %}<article class="echo-card"><a href="{% url 'events:view_photo' event.event_code photo.id %}" target="_blank" rel="noopener"><img src="{% url 'events:view_photo' event.event_code photo.id %}" alt="Event photo" style="max-width:100%;height:auto"></a><p>{% if photo.uploaded_by %}{{ photo.uploaded_by.get_full_name|default:photo.uploaded_by.username }}{% else %}Member{% endif %}</p>{% if event.allow_download %}<a href="{% url 'events:download_photo' event.event_code photo.id %}">Download</a>{% endif %}<button class="delete-photo" data-url="{% url 'events:delete_photo' event.event_code photo.id %}">Delete</button></article>{% endfor %}</div>{% else %}<p>No photos shared yet.</p>{% endif %}
+{% if photo_page.has_other_pages %}<nav aria-label="Album pages" style="margin:1rem 0">{% if photo_page.has_previous %}<a class="echo-button-outline" href="?page={{ photo_page.previous_page_number }}&page_size={{ photo_page_size }}#album">Previous</a>{% endif %}<span>Page {{ photo_page.number }} of {{ photo_page.paginator.num_pages }}</span>{% if photo_page.has_next %}<a class="echo-button-outline" href="?page={{ photo_page.next_page_number }}&page_size={{ photo_page_size }}#album">Next</a>{% endif %}</nav>{% endif %}</section>
 </main><script src="{% static 'js/qrcode.min.js' %}"></script><script>
 const csrf="{{ csrf_token }}", eventLink=new URL("{% url 'events:join_event' %}",location.origin);eventLink.searchParams.set('event_code',"{{ event.event_code }}");document.getElementById('eventLink').value=eventLink.href;new QRCode(document.getElementById('eventQRCode'),{text:eventLink.href,width:180,height:180});
 document.getElementById('downloadQr').onclick=()=>{const canvas=document.querySelector('#eventQRCode canvas');if(canvas){const a=document.createElement('a');a.href=canvas.toDataURL('image/png');a.download='echomoments-{{ event.event_code }}.png';a.click()}};

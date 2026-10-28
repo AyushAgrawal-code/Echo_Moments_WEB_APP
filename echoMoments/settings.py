@@ -157,6 +157,7 @@ if DATABASE_URL:
         "default": dj_database_url.config(
             default=DATABASE_URL,
             conn_max_age=600,
+            conn_health_checks=True,
             ssl_require=not DEBUG,
         )
     }
@@ -233,7 +234,7 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 FACE_DETECTOR_MODEL = os.environ.get("FACE_DETECTOR_MODEL", str(BASE_DIR / "models" / "face_detection_yunet_2023mar.onnx"))
 FACE_RECOGNIZER_MODEL = os.environ.get("FACE_RECOGNIZER_MODEL", str(BASE_DIR / "models" / "face_recognition_sface_2021dec.onnx"))
 FACE_MODEL_VERSION = os.environ.get("FACE_MODEL_VERSION", "opencv-yunet-2023mar-sface-2021dec-v1")
-FACE_MATCH_THRESHOLD = float(os.environ.get("FACE_MATCH_THRESHOLD", "0.363"))
+FACE_MATCH_THRESHOLD = float(os.environ.get("FACE_MATCH_THRESHOLD", "0.5"))
 
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
