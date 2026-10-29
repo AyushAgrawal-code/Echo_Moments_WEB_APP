@@ -63,6 +63,8 @@ if os.environ.get("RENDER_EXTERNAL_HOSTNAME"):
     CSRF_TRUSTED_ORIGINS.append("https://" + os.environ["RENDER_EXTERNAL_HOSTNAME"])
 
 USE_S3 = os.environ.get("USE_S3", "False").lower() in ("1", "true", "yes")
+USE_CLOUDINARY = os.environ.get("USE_CLOUDINARY", "False").lower() in ("1", "true", "yes")
+CLOUDINARY_URL = os.environ.get("CLOUDINARY_URL", "")
 AWS_STORAGE_BUCKET_NAME = os.environ.get("AWS_STORAGE_BUCKET_NAME", "")
 AWS_S3_ENDPOINT_URL = os.environ.get("AWS_S3_ENDPOINT_URL", "") or None
 AWS_S3_REGION_NAME = os.environ.get("AWS_S3_REGION_NAME", "auto")
@@ -77,10 +79,14 @@ AWS_S3_OBJECT_PARAMETERS = {"CacheControl": "private, max-age=0, no-store"}
 if USE_S3:
     if not AWS_STORAGE_BUCKET_NAME or not AWS_ACCESS_KEY_ID or not AWS_SECRET_ACCESS_KEY:
         raise ImproperlyConfigured("Set the private S3 bucket name and credentials when USE_S3=True.")
+if USE_S3 and USE_CLOUDINARY:
+    raise ImproperlyConfigured("Choose only one private object storage provider: S3 or Cloudinary.")
+if USE_CLOUDINARY and not CLOUDINARY_URL:
+    raise ImproperlyConfigured("Set CLOUDINARY_URL when USE_CLOUDINARY=True.")
 if not DEBUG:
-    if not USE_S3:
-        raise ImproperlyConfigured("Enable USE_S3=True so production uploads use persistent private storage.")
-    if not AWS_S3_ENDPOINT_URL or not os.environ.get("AWS_S3_REGION_NAME"):
+    if not (USE_S3 or USE_CLOUDINARY):
+        raise ImproperlyConfigured("Enable a private object storage provider (S3 or Cloudinary) in production.")
+    if USE_S3 and (not AWS_S3_ENDPOINT_URL or not os.environ.get("AWS_S3_REGION_NAME")):
         raise ImproperlyConfigured("Set the private S3 endpoint and region for production storage.")
     if not FACE_ENCRYPTION_KEY:
         raise ImproperlyConfigured("Set a stable FACE_ENCRYPTION_KEY for production face templates.")
@@ -287,4 +293,5 @@ EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
 EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
 EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "true").lower() in ("1", "true", "yes")
 DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "EchoMoments <noreply@localhost>")
+BREVO_API_KEY = os.environ.get("BREVO_API_KEY", "")
 

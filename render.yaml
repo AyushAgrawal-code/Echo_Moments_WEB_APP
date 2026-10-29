@@ -14,36 +14,20 @@ services:
       - key: DEBUG
         value: "False"
       - key: USE_S3
+        value: "False"
+      - key: USE_CLOUDINARY
         value: "True"
+      - key: CLOUDINARY_URL
+        sync: false
       - key: DATABASE_URL
         sync: false
-      - key: AWS_STORAGE_BUCKET_NAME
-        sync: false
-      - key: AWS_S3_ENDPOINT_URL
-        sync: false
-      - key: AWS_S3_REGION_NAME
-        sync: false
-      - key: AWS_S3_ADDRESSING_STYLE
-        value: path
-      - key: AWS_ACCESS_KEY_ID
-        sync: false
-      - key: AWS_SECRET_ACCESS_KEY
-        sync: false
       - key: FACE_ENCRYPTION_KEY
-        sync: false
+        generateValue: true
       - key: FACE_MATCH_THRESHOLD
         value: "0.46"
       - key: EMAIL_BACKEND
-        value: django.core.mail.backends.smtp.EmailBackend
-      - key: EMAIL_HOST
-        value: smtp.gmail.com
-      - key: EMAIL_PORT
-        value: "587"
-      - key: EMAIL_USE_TLS
-        value: "True"
-      - key: EMAIL_HOST_USER
-        sync: false
-      - key: EMAIL_HOST_PASSWORD
+        value: accounts.email_backends.BrevoEmailBackend
+      - key: BREVO_API_KEY
         sync: false
       - key: DEFAULT_FROM_EMAIL
         sync: false

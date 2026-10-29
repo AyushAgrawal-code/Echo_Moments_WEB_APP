@@ -6,6 +6,7 @@ whitenoise>=6.8,<7
 dj-database-url>=2.2,<3
 psycopg[binary]>=3.2,<4
 django-storages[s3]>=1.14,<2
+cloudinary>=1.46,<2
 numpy>=1.26,<3
 opencv-contrib-python-headless>=4.10,<5
 cryptography>=43,<47

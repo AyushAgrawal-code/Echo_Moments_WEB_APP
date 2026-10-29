@@ -7,6 +7,7 @@ import zipfile
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db.models import Count, Q, F
 from PIL import Image, UnidentifiedImageError
@@ -39,6 +40,18 @@ ALBUM_PAGE_SIZES = (20, 30, 50)
 
 def _stored_image_type(image_file):
     """Return an allowlisted MIME type and extension inferred from image bytes."""
+    if settings.USE_CLOUDINARY:
+        # Every object in this backend is created from the validated image
+        # upload path, so use its validated suffix instead of fetching it once
+        # for MIME sniffing and then fetching it again to serve the response.
+        cloudinary_types = {
+            ".jpg": ("image/jpeg", "jpg"),
+            ".jpeg": ("image/jpeg", "jpg"),
+            ".png": ("image/png", "png"),
+            ".gif": ("image/gif", "gif"),
+            ".webp": ("image/webp", "webp"),
+        }
+        return cloudinary_types.get(os.path.splitext(image_file.name)[1].lower())
     try:
         with image_file.open("rb") as source:
             with Image.open(source) as image:
