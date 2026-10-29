@@ -42,7 +42,7 @@
           
           <!-- Desktop Navigation -->
           <div class="desktop-nav">
-            <a href="{% if user.is_authenticated %}{% url 'accounts:dashboard' %}{% else %}{% url 'home:index' %}{% endif %}" class="nav-link">Home</a>
+            <a href="{% if user.is_authenticated %}{% url 'accounts:dashboard' %}{% else %}{% url 'index' %}{% endif %}" class="nav-link">Home</a>
             <a href="{% if user.is_authenticated %}{% url 'events:join_event' %}{% else %}{% url 'accounts:login' %}{% endif %}" class="nav-link">Join Event</a>
             <a href="{% if user.is_authenticated %}{% url 'accounts:dashboard' %}{% else %}{% url 'accounts:login' %}{% endif %}" class="nav-link">My Albums</a>
             <a href="{% if user.is_authenticated %}{% url 'events:create_event' %}{% else %}{% url 'accounts:login' %}{% endif %}" class="nav-link">Host an Event</a>
@@ -64,7 +64,7 @@
         <!-- Mobile Navigation -->
         <div class="mobile-nav" id="mobileNav">
           <div class="echo-container mobile-nav-container">
-            <a href="{% if user.is_authenticated %}{% url 'accounts:dashboard' %}{% else %}{% url 'home:index' %}{% endif %}" class="nav-link">Home</a>
+            <a href="{% if user.is_authenticated %}{% url 'accounts:dashboard' %}{% else %}{% url 'index' %}{% endif %}" class="nav-link">Home</a>
             <a href="{% if user.is_authenticated %}{% url 'events:join_event' %}{% else %}{% url 'accounts:login' %}{% endif %}" class="nav-link">Join Event</a>
             <a href="{% if user.is_authenticated %}{% url 'accounts:dashboard' %}{% else %}{% url 'accounts:login' %}{% endif %}" class="nav-link">My Albums</a>
             <a href="{% if user.is_authenticated %}{% url 'events:create_event' %}{% else %}{% url 'accounts:login' %}{% endif %}" class="nav-link">Host an Event</a>

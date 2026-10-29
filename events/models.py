@@ -58,6 +58,7 @@ class Event(models.Model):
 
     # Code & Ownership
     event_code = models.CharField(max_length=20, unique=True, editable=False)
+    invite_token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='events')
 
     # NEW system: Many-to-Many through EventMember

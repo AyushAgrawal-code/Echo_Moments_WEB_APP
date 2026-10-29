@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Finish Google sign up · EchoMoments{% endblock %}
+{% block body %}
+<main class="echo-container account-form-page">
+  <section class="echo-card account-form-card">
+    <p class="eyebrow">Google sign in</p>
+    <h1>Finish creating your account</h1>
+    <p>Your Google account is connected. Confirm the email below to create your EchoMoments account.</p>
+    <form method="post" action="{% url 'socialaccount_signup' %}" class="account-form">
+      {% csrf_token %}
+      {% if form.non_field_errors %}<div class="alert alert-error" role="alert">{{ form.non_field_errors }}</div>{% endif %}
+      {% for field in form %}
+        <div class="form-group">
+          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+          {% for error in field.errors %}<p class="form-error" role="alert">{{ error }}</p>{% endfor %}
+        </div>
+      {% endfor %}
+      {{ redirect_field }}
+      <button type="submit" class="echo-button echo-button-primary">Create account</button>
+    </form>
+    <p class="auth-form-footer"><a href="{% url 'accounts:login' %}">Back to sign in</a></p>
+  </section>
+</main>
+{% endblock %}

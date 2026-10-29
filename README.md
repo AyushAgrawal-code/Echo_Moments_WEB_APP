@@ -12,7 +12,7 @@ python scripts/download_face_models.py
 Copy-Item .env.example .env
 ```
 
-Django does not load `.env` automatically. Set environment variables in the terminal before starting the server:
+Settings load values from `.env` at startup. Copy `.env.example` to `.env` and edit the values there, or set environment variables in the terminal before starting the server:
 
 ```powershell
 $env:SECRET_KEY = "a-long-random-secret-for-local-development"
@@ -62,6 +62,14 @@ python manage.py check_face_matching
 The Render startup command runs the same check after migrations so a deployment with missing OpenCV/model files fails visibly instead of presenting an enrollment form that cannot work.
 
 The model files are downloaded from pinned OpenCV Zoo revisions and checked against SHA-256 hashes. YuNet model files are MIT-licensed and SFace model files are Apache-2.0-licensed; the script also downloads their license texts. Face matching produces suggestions, not identity proof, so users must review the album. Recognition quality should be evaluated with varied real event photos before broader use.
+
+## Authentication and account recovery
+
+Signup applies Django's configured password validators on the server. Password reset uses Django's one-time reset links. Gmail SMTP is preconfigured in `.env.example` and the local `.env` with TLS on port 587. To enable sending, turn on 2-Step Verification for the sending Google account, create an App Password for EchoMoments, and enter the same Gmail address in `EMAIL_HOST_USER` and `DEFAULT_FROM_EMAIL`; put the App Password in `EMAIL_HOST_PASSWORD`. Restart Django after saving. Keep the App Password private and use a dedicated app password rather than your Google account password.
+
+Google sign-in is optional and appears only when both `GOOGLE_OAUTH_CLIENT_ID` and `GOOGLE_OAUTH_CLIENT_SECRET` are set. Create a Google OAuth Web application client, add the deployed origin as an authorized JavaScript origin, and register `https://YOUR_DOMAIN/accounts/google/login/callback/` as an authorized redirect URI (for local development use `http://127.0.0.1:8000/accounts/google/login/callback/`). Keep the secret in the server's environment, never in browser code or source control. Install dependencies from `requirements.txt` and run `manage.py migrate` to create django-allauth's account, social-account, and Sites tables. The first deployment should also update the Django Site domain from `example.com` to the real app hostname in Django Admin.
+
+The provider integration and button rendering can be tested locally without credentials, but completing Google's external consent and callback requires your OAuth client values and a matching callback URL.
 
 Set `FACE_ENCRYPTION_KEY` to a stable Fernet key for deployments. Generate one with:
 

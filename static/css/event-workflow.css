@@ -37,6 +37,28 @@
   background: linear-gradient(135deg, #fff 0%, #f1f8f5 100%);
 }
 
+.event-workflow .event-cover-image {
+  display: block;
+  width: 100%;
+  max-height: min(42vh, 24rem);
+  margin: 0 0 1rem;
+  border-radius: calc(var(--echo-radius) - 0.25rem);
+  object-fit: cover;
+  background: #edf3f0;
+}
+
+.event-workflow .personal-album-cover {
+  margin: 0 0 1rem;
+}
+
+.event-workflow .theme-emerald { --event-accent: #19785f; }
+.event-workflow .theme-gold { --event-accent: #a97716; }
+.event-workflow .theme-purple { --event-accent: #7042a0; }
+.event-workflow .theme-blue { --event-accent: #2873a8; }
+.event-workflow .theme-coral { --event-accent: #c85c50; }
+.event-workflow .event-intro[class*="theme-"] { border-top: 0.35rem solid var(--event-accent, #19785f); }
+.event-workflow .event-intro[class*="theme-"] h1 { color: var(--event-accent, #19785f); }
+
 .event-workflow .event-intro h1,
 .event-workflow .event-main > h1 {
   margin: 0 0 0.5rem;
@@ -111,6 +133,55 @@
 .event-workflow #uploadStatus {
   min-width: 0;
   overflow-wrap: anywhere;
+}
+
+.event-workflow .upload-progress-panel {
+  display: grid;
+  flex: 1 1 100%;
+  gap: 0.4rem;
+  min-width: 0;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid rgba(29, 122, 95, 0.16);
+  border-radius: 0.75rem;
+  background: #f2f8f5;
+  color: #164b3b;
+  font-size: 0.9rem;
+}
+
+.event-workflow .upload-progress-panel[hidden] {
+  display: none;
+}
+
+.event-workflow .upload-progress-bar,
+.event-workflow .upload-file-progress {
+  display: block;
+  width: 100%;
+  height: 0.7rem;
+  overflow: hidden;
+  border: 0;
+  border-radius: 999px;
+  background: #dcebe5;
+  color: #19785f;
+  accent-color: #19785f;
+}
+
+.event-workflow .upload-progress-bar::-webkit-progress-bar,
+.event-workflow .upload-file-progress::-webkit-progress-bar {
+  border-radius: 999px;
+  background: #dcebe5;
+}
+
+.event-workflow .upload-progress-bar::-webkit-progress-value,
+.event-workflow .upload-file-progress::-webkit-progress-value {
+  border-radius: 999px;
+  background: linear-gradient(90deg, #19785f, #2e9b78);
+  transition: width 0.18s ease;
+}
+
+.event-workflow .upload-progress-bar::-moz-progress-bar,
+.event-workflow .upload-file-progress::-moz-progress-bar {
+  border-radius: 999px;
+  background: #19785f;
 }
 
 .event-workflow .selfie-source-switch,
@@ -419,6 +490,12 @@
 
 .event-workflow #uploadQueue.upload-queue-list li {
   padding: 0.15rem 0.25rem 0.15rem 0;
+}
+
+.event-workflow .upload-file-progress {
+  width: min(100%, 18rem);
+  height: 0.45rem;
+  margin: 0.3rem 0 0.55rem;
 }
 
 .event-workflow #eventQRCode {

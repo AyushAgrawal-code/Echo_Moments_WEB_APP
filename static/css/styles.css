@@ -137,6 +137,73 @@ a {
   box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
 }
 
+/* Shared layout for account recovery and social sign-up forms. */
+.account-form-page {
+  max-width: 44rem;
+  min-height: 65vh;
+  padding-top: clamp(2rem, 7vh, 4.5rem);
+  padding-bottom: clamp(2rem, 7vh, 4.5rem);
+}
+
+.account-form-card {
+  padding: clamp(1.5rem, 5vw, 2.75rem);
+}
+
+.account-form-card h1 {
+  margin-bottom: 0.75rem;
+  color: var(--echo-deep-emerald);
+  font-size: clamp(1.8rem, 5vw, 2.5rem);
+}
+
+.account-form-card > p {
+  margin-bottom: 1.5rem;
+  color: var(--muted-foreground);
+}
+
+.account-form .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  margin: 0 0 1.25rem;
+}
+
+.account-form .form-group label {
+  color: var(--echo-deep-emerald);
+  font-weight: 600;
+}
+
+.account-form input:not([type="checkbox"]):not([type="hidden"]),
+.account-form select,
+.account-form textarea {
+  display: block;
+  width: 100%;
+  min-height: 3rem;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid #cbded7;
+  border-radius: 0.65rem;
+  background: #fff;
+  color: var(--foreground);
+  font: inherit;
+}
+
+.account-form input:focus,
+.account-form select:focus,
+.account-form textarea:focus {
+  outline: 3px solid rgba(29, 122, 95, 0.16);
+  border-color: var(--primary);
+}
+
+.account-form .form-error,
+.account-form .errorlist {
+  margin: 0;
+  color: #a52a2a;
+  font-size: 0.9rem;
+}
+
+.account-form-card > p:last-child {
+  margin: 1.25rem 0 0;
+}
+
 /* Buttons */
 button {
   cursor: pointer;

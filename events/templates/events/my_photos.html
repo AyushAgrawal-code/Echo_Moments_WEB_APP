@@ -14,7 +14,8 @@
   <nav class="nav"><a href="{% url 'events:event_detail' event.event_code %}">Back to event</a><a href="{% url 'accounts:dashboard' %}">My Dashboard</a></nav>
 </div></div></header>
 <main class="container event-main">
-  <h1>My Photos</h1>
+  {% if event.cover_photo %}<img class="event-cover-image personal-album-cover theme-{{ event.theme_color }}" src="{% url 'events:view_event_cover' event.event_code %}" alt="{{ event.event_name }} cover">{% endif %}
+  <h1 class="theme-{{ event.theme_color }}">My Photos</h1>
   <p>Possible matches from <strong>{{ event.event_name }}</strong>. Face matching can miss photos or suggest a wrong match, so review this personal album.</p>
 
   {% if messages %}<section class="echo-card" role="status">{% for message in messages %}<p>{{ message }}</p>{% endfor %}</section>{% endif %}

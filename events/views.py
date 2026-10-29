@@ -14,6 +14,7 @@ from django.db import IntegrityError, transaction
 from django.http import JsonResponse, HttpResponse, FileResponse
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods, require_POST
 
@@ -118,6 +119,24 @@ def join_event(request):
 
 
 @login_required
+def accept_event_invite(request, invite_token):
+    event = get_object_or_404(Event, invite_token=invite_token)
+    if event.privacy != "private":
+        return HttpResponse("This invitation is no longer valid.", status=404)
+    if not event.is_active:
+        return render(request, "events/event_unavailable.html", {"event": event}, status=410)
+    membership, created = EventMember.objects.get_or_create(
+        user=request.user,
+        event=event,
+        defaults={"join_method": "invite", "role": "guest", "is_active": True},
+    )
+    if not created and not membership.is_active:
+        messages.error(request, "Your membership in this event is inactive.")
+        return redirect("accounts:dashboard")
+    return redirect("events:event_detail", event_code=event.event_code)
+
+
+@login_required
 def create_event(request):
     if request.method == "POST":
         name = request.POST.get("event_name", "").strip()
@@ -150,13 +169,23 @@ def create_event(request):
                     cover_photo=cover_photo,
                     allow_upload="allow_upload" in request.POST,
                     allow_download="allow_download" in request.POST,
-                    allow_tag="allow_tag" in request.POST,
-                    allow_comment="allow_comment" in request.POST,
+                    allow_tag=False,
+                    allow_comment=False,
                 )
                 EventMember.objects.create(user=request.user, event=event, role="host", join_method="code")
         except (ValidationError, ValueError) as exc:
             return JsonResponse({"success": False, "error": str(exc)}, status=400)
-        return JsonResponse({"success": True, "event_code": event.event_code, "url": redirect("events:event_detail", event_code=event.event_code).url, "join_url": request.build_absolute_uri(redirect("events:join_event").url) + "?event_code=" + event.event_code}, status=201)
+        if event.privacy == "private":
+            join_url = request.build_absolute_uri(reverse("events:accept_event_invite", args=[event.invite_token]))
+        else:
+            join_url = request.build_absolute_uri(reverse("events:join_event")) + "?event_code=" + event.event_code
+        return JsonResponse({
+            "success": True,
+            "event_code": event.event_code,
+            "privacy": event.privacy,
+            "url": reverse("events:event_detail", args=[event.event_code]),
+            "join_url": join_url,
+        }, status=201)
     return render(request, "events/host.html")
 
 
@@ -220,7 +249,13 @@ def event_detail(request, event_code):
     if not is_host:
         upload_jobs = upload_jobs.filter(uploader=request.user)
     upload_jobs = upload_jobs[:20]
+    share_url = (
+        request.build_absolute_uri(reverse("events:accept_event_invite", args=[event.invite_token]))
+        if event.privacy == "private"
+        else request.build_absolute_uri(reverse("events:join_event")) + "?event_code=" + event.event_code
+    )
     context = {"event": event, "members": members, "photos": photos,
+               "share_url": share_url,
                "is_host": is_host,
                "membership": membership,
                "member_page": member_page,
@@ -634,6 +669,28 @@ def view_photo(request, event_code, photo_id):
         photo.image.open("rb"),
         as_attachment=False,
         filename=f"photo-{photo.pk}.{extension}",
+        content_type=content_type,
+    )
+    response["Cache-Control"] = "private, no-store"
+    response["X-Content-Type-Options"] = "nosniff"
+    return response
+
+
+@login_required
+def view_event_cover(request, event_code):
+    event = get_object_or_404(Event, event_code=event_code)
+    if not _can_view(event, request.user):
+        return HttpResponse("Event membership required.", status=403)
+    if not event.cover_photo:
+        return HttpResponse("Cover photo is unavailable.", status=404)
+    image_info = _stored_image_type(event.cover_photo)
+    if not image_info:
+        return HttpResponse("Cover photo is unavailable.", status=404)
+    content_type, extension = image_info
+    response = FileResponse(
+        event.cover_photo.open("rb"),
+        as_attachment=False,
+        filename=f"event-cover-{event.event_code}.{extension}",
         content_type=content_type,
     )
     response["Cache-Control"] = "private, no-store"

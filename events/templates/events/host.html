@@ -99,15 +99,6 @@
                   <span class="checkbox-text">Allow guests to download photos</span>
                 </label>
 
-                <label class="checkbox-label">
-                  <input type="checkbox" name="allow_tag">
-                  <span class="checkbox-text">Allow guests to tag people in photos</span>
-                </label>
-
-                <label class="checkbox-label">
-                  <input type="checkbox" name="allow_comment">
-                  <span class="checkbox-text">Allow comments on photos</span>
-                </label>
               </div>
             </div>
 
@@ -223,7 +214,7 @@
         <i class="fas fa-check-circle"></i>
       </div>
       <h2>Event Created!</h2>
-      <p>Your event has been successfully created. Share the QR code or event code with your guests.</p>
+      <p id="shareInstructions">Your event has been successfully created. Share the QR code or event code with your guests.</p>
 
       <div class="event-codes">
         <div class="qr-code" id="eventQRCode">
@@ -233,7 +224,7 @@
         </div>
 
         <div class="event-code">
-          <p>Event Code</p>
+          <p id="eventCodeLabel">Event Code</p>
           <div class="code-display" id="eventCodeDisplay">ABC123</div>
         </div>
       </div>

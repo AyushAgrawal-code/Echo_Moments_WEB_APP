@@ -120,11 +120,11 @@
                         </div>
                     </a>
 
-                    <a href="#" class="action-btn echo-button-ghost">
+                    <a href="{% url 'accounts:dashboard' %}#your-events" class="action-btn echo-button-ghost">
                         <div class="action-icon"><i class="fas fa-upload"></i></div>
                         <div class="action-text">
                             <p class="action-title">Upload Photos</p>
-                            <p class="action-description">Add photos to your events</p>
+                            <p class="action-description">Choose an event and add photos to its album</p>
                         </div>
                     </a>
 
@@ -165,7 +165,7 @@
         </div>
 
         <!-- Bottom Section -->
-        <div class="bottom-section">
+        <div class="bottom-section" id="your-events">
             <div class="events-section">
 
                 <!-- Hosted Events -->

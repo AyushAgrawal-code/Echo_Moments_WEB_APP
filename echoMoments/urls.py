@@ -30,6 +30,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('',include('home.urls')),
     path("accounts/", include("accounts.urls")), # ✅ link accounts
+    path("accounts/", include("allauth.urls")),
     path('events/', include('events.urls')),  # events app routes
     path("accounts/", include("django.contrib.auth.urls")),  # 🔹 yeh add karo
 

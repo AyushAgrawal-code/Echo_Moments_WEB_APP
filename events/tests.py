@@ -37,6 +37,9 @@ class EventWorkflowTests(TestCase):
         self.upload_url = reverse("events:upload_photo", args=[self.event.event_code])
 
     def tearDown(self):
+        for event in Event.objects.all():
+            if event.cover_photo:
+                event.cover_photo.delete(save=False)
         for job in UploadJob.objects.all():
             if job.source_file:
                 job.source_file.delete(save=False)
@@ -53,6 +56,84 @@ class EventWorkflowTests(TestCase):
         self.assertEqual(response.status_code, 201)
         event = Event.objects.get(event_code=response.json()["event_code"])
         self.assertTrue(EventMember.objects.filter(event=event, user=self.host, role="host", is_active=True).exists())
+
+    def test_creation_ui_removes_tag_and_comment_permissions_and_saves_remaining_settings(self):
+        self.client.force_login(self.host)
+        page = self.client.get(reverse("events:create_event"))
+        self.assertNotContains(page, 'name="allow_tag"')
+        self.assertNotContains(page, 'name="allow_comment"')
+        response = self.client.post(reverse("events:create_event"), {
+            "event_name": "Private celebration",
+            "event_date": "2026-12-01",
+            "privacy": "private",
+            "theme_color": "gold",
+        })
+        self.assertEqual(response.status_code, 201)
+        payload = response.json()
+        self.assertEqual(payload["privacy"], "private")
+        self.assertIn("/events/invite/", payload["join_url"])
+        event = Event.objects.get(event_code=payload["event_code"])
+        self.assertEqual(event.privacy, "private")
+        self.assertEqual(event.theme_color, "gold")
+        self.assertFalse(event.allow_upload)
+        self.assertFalse(event.allow_download)
+        self.assertFalse(event.allow_tag)
+        self.assertFalse(event.allow_comment)
+
+    def test_private_invitation_link_grants_membership_once_and_code_does_not(self):
+        self.event.privacy = "private"
+        self.event.save(update_fields=["privacy"])
+        invite_url = reverse("events:accept_event_invite", args=[self.event.invite_token])
+        self.client.force_login(self.guest)
+        self.client.post(reverse("events:join_event"), {"event_code": self.event.event_code})
+        self.assertFalse(EventMember.objects.filter(event=self.event, user=self.guest).exists())
+        first = self.client.get(invite_url)
+        second = self.client.get(invite_url)
+        self.assertRedirects(first, reverse("events:event_detail", args=[self.event.event_code]))
+        self.assertRedirects(second, reverse("events:event_detail", args=[self.event.event_code]))
+        member = EventMember.objects.get(event=self.event, user=self.guest)
+        self.assertTrue(member.is_active)
+        self.assertEqual(member.join_method, "invite")
+
+    def test_invitation_link_cannot_join_ended_event_or_hidden_event(self):
+        self.event.privacy = "private"
+        self.event.save(update_fields=["privacy"])
+        invite_url = reverse("events:accept_event_invite", args=[self.event.invite_token])
+        self.client.force_login(self.guest)
+        self.event.is_active = False
+        self.event.save(update_fields=["is_active"])
+        self.assertEqual(self.client.get(invite_url).status_code, 410)
+        self.assertFalse(EventMember.objects.filter(event=self.event, user=self.guest).exists())
+        self.event.is_active = True
+        self.event.privacy = "hidden"
+        self.event.save(update_fields=["is_active", "privacy"])
+        self.assertEqual(self.client.get(invite_url).status_code, 404)
+
+    def test_event_cover_is_rendered_through_member_checked_private_endpoint(self):
+        image_buffer = BytesIO()
+        Image.new("RGB", (4, 3), color="orange").save(image_buffer, format="PNG")
+        self.event.cover_photo.save(
+            "cover.png",
+            SimpleUploadedFile("cover.png", image_buffer.getvalue(), content_type="image/png"),
+            save=True,
+        )
+        cover_url = reverse("events:view_event_cover", args=[self.event.event_code])
+        self.client.force_login(self.host)
+        host_response = self.client.get(cover_url)
+        self.assertEqual(host_response.status_code, 200)
+        self.assertEqual(host_response["Content-Type"], "image/png")
+        self.assertEqual(host_response["Cache-Control"], "private, no-store")
+        host_response.close()
+        detail = self.client.get(reverse("events:event_detail", args=[self.event.event_code]))
+        self.assertContains(detail, cover_url)
+
+        self.client.force_login(self.other)
+        self.assertEqual(self.client.get(cover_url).status_code, 403)
+        EventMember.objects.create(user=self.guest, event=self.event, role="guest")
+        self.client.force_login(self.guest)
+        guest_response = self.client.get(cover_url)
+        self.assertEqual(guest_response.status_code, 200)
+        guest_response.close()
 
     def test_event_cover_rejects_documents_programs_audio_and_video(self):
         self.client.force_login(self.host)

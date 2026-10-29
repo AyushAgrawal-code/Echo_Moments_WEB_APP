@@ -5,6 +5,9 @@ from django.contrib.auth import authenticate
 from django.contrib.auth import login as auth_login
 from django.contrib.auth import logout as auth_logout
 from django.contrib.auth.models import User
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.utils.timezone import now
@@ -14,9 +17,32 @@ import mimetypes
 import os
 from django.db.models import Count, Q
 from django.views.decorators.http import require_POST
+from django.conf import settings
 
 from events.models import Event, EventMember, Photo
 from .forms import UserUpdateForm, ProfileUpdateForm
+
+
+def _create_account(name, email, password):
+    name = (name or "").strip()
+    email = (email or "").strip().lower()
+    if not name:
+        raise ValidationError("Enter your name.")
+    if not email:
+        raise ValidationError("Enter your email address.")
+    if not password:
+        raise ValidationError("Enter a password.")
+    validate_email(email)
+    if User.objects.filter(username__iexact=email).exists() or User.objects.filter(email__iexact=email).exists():
+        raise ValidationError("This email is already registered.")
+    candidate = User(username=email, email=email, first_name=name)
+    validate_password(password, user=candidate)
+    return User.objects.create_user(
+        username=email,
+        email=email,
+        password=password,
+        first_name=name,
+    )
 
 
 # -----------------------------------------------------------
@@ -40,7 +66,7 @@ def login_view(request):
         messages.error(request, "Invalid email or password.")
         return redirect("accounts:login")
 
-    return render(request, "accounts/login.html")
+    return render(request, "accounts/login.html", {"google_login_enabled": settings.GOOGLE_LOGIN_ENABLED})
 
 
 # -----------------------------------------------------------
@@ -70,26 +96,19 @@ def auth_view(request):
                 ""
             )
 
-            if User.objects.filter(username=email).exists():
-                messages.error(
-                    request,
-                    "This email is already registered."
-                )
-                return redirect("accounts:auth")
-
-            user = User.objects.create_user(
-                username=email,
-                email=email,
-                password=password,
-                first_name=name,
-            )
+            try:
+                _create_account(name, email, password)
+            except ValidationError as exc:
+                for error in exc.messages:
+                    messages.error(request, error)
+                return redirect("accounts:signup")
 
             messages.success(
                 request,
                 "Account created successfully!"
             )
 
-            return redirect("accounts:auth")
+            return redirect("accounts:login")
 
         # ---------------------------------------------------
         # LOGIN
@@ -125,7 +144,8 @@ def auth_view(request):
 
     return render(
         request,
-        "accounts/login.html"
+        "accounts/login.html",
+        {"google_login_enabled": settings.GOOGLE_LOGIN_ENABLED},
     )
 
 
@@ -386,36 +406,16 @@ def signup_view(request):
 
     if request.method == "POST":
 
-        username = request.POST.get(
-            "username"
-        )
+        username = request.POST.get("username", "").strip()
+        email = request.POST.get("email", "").strip().lower()
+        password = request.POST.get("password", "")
 
-        email = request.POST.get(
-            "email"
-        )
-
-        password = request.POST.get(
-            "password"
-        )
-
-        if User.objects.filter(
-            username=username
-        ).exists():
-
-            messages.error(
-                request,
-                "Username already exists."
-            )
-
-            return redirect(
-                "accounts:signup"
-            )
-
-        user = User.objects.create_user(
-            username=username,
-            email=email,
-            password=password
-        )
+        try:
+            _create_account(username, email, password)
+        except ValidationError as exc:
+            for error in exc.messages:
+                messages.error(request, error)
+            return redirect("accounts:signup")
 
         messages.success(
             request,
@@ -428,7 +428,8 @@ def signup_view(request):
 
     return render(
         request,
-        "accounts/signup.html"
+        "accounts/signup.html",
+        {"google_login_enabled": settings.GOOGLE_LOGIN_ENABLED},
     )
 
 

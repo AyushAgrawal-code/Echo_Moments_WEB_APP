@@ -93,7 +93,7 @@
                 <h2>Create Account</h2>
                 <p>Join EchoMoments to start sharing your memories</p>
               </div>
-              <form class="auth-form" method="POST" action="{% url 'accounts:auth' %}">
+              <form id="signup-form" class="auth-form" method="POST" action="{% url 'accounts:auth' %}">
                {% csrf_token %}
                     <input type="hidden" name="form_type" value="signup">
                 <div class="form-group">
@@ -135,27 +135,22 @@
                 </div>
                 
                 <button type="submit" class="echo-button echo-button-primary full-width">Create Account</button>
-                
-                <div class="social-auth">
-                  <div class="social-auth-divider">
-                    <span>or sign up with</span>
-                  </div>
-                  <div class="social-buttons">
-                    <button type="button" class="social-button">
-                      <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/google/google-original.svg" alt="Google">
-                      Google
-                    </button>
-                    <button type="button" class="social-button">
-                      <i class="fa-brands fa-facebook"></i>
-                      Facebook
-                    </button>
-                  </div>
-                </div>
+              </form>
+
+                {% if google_login_enabled %}
+                {% load socialaccount %}
+                <div class="auth-divider" role="separator"><span>or</span></div>
+                <form class="google-signin-form" method="post" action="{% provider_login_url 'google' %}">
+                  {% csrf_token %}
+                  <button type="submit" class="echo-button echo-button-ghost full-width">
+                    <i class="fab fa-google" aria-hidden="true"></i> Continue with Google
+                  </button>
+                </form>
+                {% endif %}
                 
                 <div class="auth-form-footer">
                   <p>Already have an account? <a href="{% url 'accounts:login' %}" >Log in</a></p>
                 </div>
-              </form>
             </div>
           </div>
         </div>

@@ -92,7 +92,7 @@
                 <h2>Welcome Back</h2>
                 <p>Log in to continue your journey with EchoMoments</p>
               </div>
-              <form class="auth-form" method="POST" action="{% url 'accounts:auth' %}">
+              <form id="login-form" class="auth-form" method="POST" action="{% url 'accounts:auth' %}">
                 {% csrf_token %}
                      <input type="hidden" name="form_type" value="login">
                 <div class="form-group">
@@ -105,7 +105,7 @@
                 <div class="form-group">
                   <div class="password-label-row">
                     <label for="login-password">Password</label>
-                    <a href="#" class="forgot-password">Forgot password?</a>
+                    <a href="{% url 'accounts:password_reset' %}" class="forgot-password">Forgot password?</a>
                   </div>
                   <div class="input-with-icon">
                     <i class="fa-regular fa-lock"></i>
@@ -123,27 +123,22 @@
                   </label>
                 </div>
                 <button type="submit" class="echo-button echo-button-primary full-width">Log In</button>
-                
-                <div class="social-auth">
-                  <div class="social-auth-divider">
-                    <span>or continue with</span>
-                  </div>
-                  <div class="social-buttons">
-                    <button type="button" class="social-button">
-                      <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/google/google-original.svg" alt="Google">
-                      Google
-                    </button>
-                    <button type="button" class="social-button">
-                      <i class="fa-brands fa-facebook"></i>
-                      Facebook
-                    </button>
-                  </div>
-                </div>
+              </form>
+
+                {% if google_login_enabled %}
+                {% load socialaccount %}
+                <div class="auth-divider" role="separator"><span>or</span></div>
+                <form class="google-signin-form" method="post" action="{% provider_login_url 'google' %}">
+                  {% csrf_token %}
+                  <button type="submit" class="echo-button echo-button-ghost full-width">
+                    <i class="fab fa-google" aria-hidden="true"></i> Continue with Google
+                  </button>
+                </form>
+                {% endif %}
                 
                 <div class="auth-form-footer">
                   <p>Don't have an account? <a href="{% url 'accounts:signup' %}" >Sign up</a></p>
                 </div>
-              </form>
             </div>
             
           </div>

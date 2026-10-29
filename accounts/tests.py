@@ -1,5 +1,6 @@
 from django.contrib.auth.models import User
-from django.test import TestCase
+from django.core import mail
+from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.core.files.uploadedfile import SimpleUploadedFile
 from .admin import UserProfileAdminForm
@@ -75,3 +76,110 @@ class ProfileUpdateTests(TestCase):
 					instance=self.user.profile,
 				)
 				self.assertIn("profile_pic", form.errors)
+
+
+class AccountAuthenticationTests(TestCase):
+	def test_signup_enforces_password_validators_and_rejects_duplicates(self):
+		weak_response = self.client.post(reverse("accounts:auth"), {
+			"form_type": "signup",
+			"signup-name": "QA Account",
+			"signup-email": "weak-password@example.test",
+			"signup-password": "123",
+		})
+		self.assertRedirects(weak_response, reverse("accounts:signup"))
+		self.assertFalse(User.objects.filter(username="weak-password@example.test").exists())
+
+		good_response = self.client.post(reverse("accounts:auth"), {
+			"form_type": "signup",
+			"signup-name": "QA Account",
+			"signup-email": "qa-account@example.test",
+			"signup-password": "Long-Unique-Passphrase-947!",
+		})
+		self.assertRedirects(good_response, reverse("accounts:login"))
+		self.assertTrue(User.objects.filter(username="qa-account@example.test").exists())
+
+		duplicate_response = self.client.post(reverse("accounts:auth"), {
+			"form_type": "signup",
+			"signup-name": "Duplicate",
+			"signup-email": "QA-ACCOUNT@example.test",
+			"signup-password": "Long-Unique-Passphrase-947!",
+		})
+		self.assertRedirects(duplicate_response, reverse("accounts:signup"))
+		self.assertEqual(User.objects.filter(email__iexact="qa-account@example.test").count(), 1)
+
+	def test_legacy_signup_endpoint_uses_the_same_password_validation(self):
+		response = self.client.post(reverse("accounts:signup"), {
+			"username": "QA Legacy",
+			"email": "legacy-weak@example.test",
+			"password": "123",
+		})
+		self.assertRedirects(response, reverse("accounts:signup"))
+		self.assertFalse(User.objects.filter(email="legacy-weak@example.test").exists())
+
+	def test_login_logout_and_dashboard_access_flow(self):
+		user = User.objects.create_user(
+			username="auth-flow@example.test",
+			email="auth-flow@example.test",
+			password="Long-Unique-Passphrase-947!",
+		)
+		login_page = self.client.get(reverse("accounts:login"))
+		self.assertContains(login_page, reverse("accounts:password_reset"))
+		self.assertNotContains(login_page, "social-button")
+		self.assertContains(login_page, 'id="login-form"')
+
+		response = self.client.post(reverse("accounts:auth"), {
+			"form_type": "login",
+			"login-email": user.email,
+			"login-password": "Long-Unique-Passphrase-947!",
+		})
+		self.assertRedirects(response, reverse("accounts:dashboard"))
+		dashboard = self.client.get(reverse("accounts:dashboard"))
+		self.assertEqual(dashboard.status_code, 200)
+		self.assertContains(dashboard, f'{reverse("accounts:dashboard")}#your-events')
+
+		self.assertEqual(self.client.post(reverse("accounts:logout")).status_code, 302)
+		self.assertEqual(self.client.get(reverse("accounts:dashboard")).status_code, 302)
+
+	def test_signup_password_meter_is_bound_to_the_real_signup_form(self):
+		page = self.client.get(reverse("accounts:signup"))
+		self.assertContains(page, 'id="signup-form"')
+		self.assertNotContains(page, "social-button")
+
+	@override_settings(GOOGLE_LOGIN_ENABLED=False)
+	def test_google_signin_is_hidden_until_credentials_are_configured(self):
+		page = self.client.get(reverse("accounts:login"))
+		self.assertNotContains(page, "Continue with Google")
+		self.assertEqual(self.client.get("/accounts/google/login/").status_code, 200)
+
+	@override_settings(GOOGLE_LOGIN_ENABLED=True)
+	def test_google_signin_button_posts_to_google_provider(self):
+		page = self.client.get(reverse("accounts:login"))
+		self.assertContains(page, "Continue with Google")
+		self.assertContains(page, 'action="/accounts/google/login/"')
+
+	@override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+	def test_password_reset_email_link_changes_password_end_to_end(self):
+		user = User.objects.create_user(
+			username="reset@example.test",
+			email="reset@example.test",
+			password="Old-Unique-Passphrase-943!",
+		)
+		response = self.client.post(reverse("accounts:password_reset"), {"email": user.email})
+		self.assertRedirects(response, reverse("accounts:password_reset_done"))
+		self.assertEqual(len(mail.outbox), 1)
+		self.assertEqual(self.client.get(reverse("accounts:password_reset_done")).status_code, 200)
+
+		import re
+		match = re.search(r"https?://[^/]+(/accounts/password-reset/[A-Za-z0-9_-]+/[A-Za-z0-9_-]+/)", mail.outbox[0].body)
+		self.assertIsNotNone(match, mail.outbox[0].body)
+		confirm_response = self.client.get(match.group(1))
+		self.assertEqual(confirm_response.status_code, 302)
+		confirm_page = self.client.get(confirm_response.url)
+		self.assertContains(confirm_page, 'name="new_password1"')
+		complete = self.client.post(confirm_response.url, {
+			"new_password1": "New-Unique-Passphrase-643!",
+			"new_password2": "New-Unique-Passphrase-643!",
+		})
+		self.assertRedirects(complete, reverse("accounts:password_reset_complete"))
+		user.refresh_from_db()
+		self.assertTrue(user.check_password("New-Unique-Passphrase-643!"))

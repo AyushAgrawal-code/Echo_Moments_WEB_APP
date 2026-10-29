@@ -21,7 +21,8 @@
   </div>
 </header>
 <main class="container event-main">
-  <header class="event-intro">
+  <header class="event-intro theme-{{ event.theme_color }}">
+    {% if event.cover_photo %}<img class="event-cover-image" src="{% url 'events:view_event_cover' event.event_code %}" alt="{{ event.event_name }} cover">{% endif %}
     <h1>{{ event.event_name }}</h1>
     <p class="event-meta">{{ event.event_date|date:'M d, Y' }}{% if event.location %} · {{ event.location }}{% endif %}</p>
     {% if event.description %}<p class="event-description">{{ event.description }}</p>{% endif %}

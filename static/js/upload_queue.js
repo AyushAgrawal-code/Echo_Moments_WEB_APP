@@ -7,6 +7,49 @@
   const status = document.getElementById("uploadStatus");
   let list = document.getElementById("uploadQueue");
   const maxParallelUploads = 3;
+  let progressItems = [];
+  let totalUploadBytes = 0;
+
+  const progressPanel = document.createElement("div");
+  progressPanel.className = "upload-progress-panel";
+  progressPanel.hidden = true;
+  progressPanel.setAttribute("role", "status");
+  progressPanel.setAttribute("aria-live", "polite");
+  const progressSummary = document.createElement("span");
+  progressSummary.className = "upload-progress-summary";
+  const overallProgress = document.createElement("progress");
+  overallProgress.className = "upload-progress-bar";
+  overallProgress.max = 100;
+  overallProgress.value = 0;
+  overallProgress.setAttribute("aria-label", "Overall photo upload progress");
+  progressPanel.append(progressSummary, overallProgress);
+  form.append(progressPanel);
+
+  function formatBytes(bytes) {
+    if (bytes < 1024) return `${bytes} B`;
+    const units = ["KB", "MB", "GB"];
+    let value = bytes / 1024;
+    let unit = units[0];
+    for (let index = 1; value >= 1024 && index < units.length; index += 1) {
+      value /= 1024;
+      unit = units[index];
+    }
+    return `${value.toFixed(value >= 10 ? 0 : 1)} ${unit}`;
+  }
+
+  function refreshUploadProgress() {
+    const loadedBytes = progressItems.reduce((total, item) => total + item.loadedBytes, 0);
+    const percent = totalUploadBytes
+      ? Math.min(100, Math.round((loadedBytes / totalUploadBytes) * 100))
+      : 100;
+    overallProgress.value = percent;
+    overallProgress.setAttribute("aria-valuetext", `${percent}% uploaded`);
+
+    const transferFinished = progressItems.length > 0 && progressItems.every((item) => item.transferFinished);
+    progressSummary.textContent = transferFinished
+      ? `Transfer finished · ${formatBytes(loadedBytes)} of ${formatBytes(totalUploadBytes)} sent. Check each photo’s queue status below.`
+      : `Uploading photos · ${formatBytes(loadedBytes)} of ${formatBytes(totalUploadBytes)} sent (${percent}%).`;
+  }
 
   if (!list) {
     list = document.createElement("ul");
@@ -24,7 +67,7 @@
       while (nextIndex < items.length) {
         const index = nextIndex;
         nextIndex += 1;
-        if (await callback(items[index])) successes += 1;
+        if (await callback(items[index], index)) successes += 1;
       }
     });
     await Promise.all(workers);
@@ -45,11 +88,16 @@
     const row = document.createElement("li");
     const label = document.createElement("span");
     const detail = document.createElement("span");
+    const progress = document.createElement("progress");
     label.textContent = file.name;
     detail.textContent = "Waiting to upload";
-    row.append(label, document.createTextNode(" — "), detail);
+    progress.className = "upload-file-progress";
+    progress.max = Math.max(1, file.size);
+    progress.value = 0;
+    progress.setAttribute("aria-label", `${file.name} upload progress`);
+    row.append(label, document.createTextNode(" — "), detail, progress);
     list.prepend(row);
-    return { row, detail };
+    return { row, detail, progress, loadedBytes: 0, transferFinished: false };
   }
 
   function uploadFile(file, uploadId, item) {
@@ -64,13 +112,20 @@
       if (form.dataset.csrf) xhr.setRequestHeader("X-CSRFToken", form.dataset.csrf);
       xhr.upload.onprogress = (event) => {
         if (event.lengthComputable) {
-          const percent = Math.round((event.loaded / event.total) * 100);
-          item.detail.textContent = `Uploading ${percent}%`;
+          item.loadedBytes = Math.min(file.size, Math.round((event.loaded / event.total) * file.size));
+          item.progress.value = item.loadedBytes;
+          const percent = file.size ? Math.round((item.loadedBytes / file.size) * 100) : 100;
+          item.detail.textContent = `Uploading ${percent}% · ${formatBytes(item.loadedBytes)} of ${formatBytes(file.size)}`;
+          refreshUploadProgress();
         } else {
           item.detail.textContent = "Uploading…";
         }
       };
       xhr.onload = () => {
+        item.loadedBytes = file.size;
+        item.progress.value = item.loadedBytes;
+        item.transferFinished = true;
+        refreshUploadProgress();
         let payload = {};
         try { payload = JSON.parse(xhr.responseText); } catch (_) { /* handled below */ }
         if (xhr.status >= 200 && xhr.status < 300 && payload.job_id) {
@@ -82,11 +137,15 @@
         reject(error);
       };
       xhr.onerror = () => {
+        item.transferFinished = true;
+        refreshUploadProgress();
         const error = new Error("Network interrupted.");
         error.retryable = true;
         reject(error);
       };
       xhr.ontimeout = () => {
+        item.transferFinished = true;
+        refreshUploadProgress();
         const error = new Error("Upload timed out.");
         error.retryable = true;
         reject(error);
@@ -132,6 +191,10 @@
     const maxAttempts = 3;
     for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
       try {
+        item.loadedBytes = 0;
+        item.progress.value = 0;
+        item.transferFinished = false;
+        refreshUploadProgress();
         item.detail.textContent = attempt === 1 ? "Starting upload…" : `Retry ${attempt - 1} of ${maxAttempts - 1}…`;
         const result = await uploadFile(file, uploadId, item);
         item.detail.textContent = "Queued for processing";
@@ -177,10 +240,14 @@
     submitButton.disabled = true;
     fileInput.disabled = true;
     status.textContent = `Uploading ${files.length} photo(s) with up to ${maxParallelUploads} in parallel…`;
+    progressPanel.hidden = false;
+    progressItems = files.map(addQueueItem);
+    totalUploadBytes = files.reduce((total, file) => total + file.size, 0);
+    refreshUploadProgress();
 
     // Keep file requests independent, but do not make every member of a large batch wait in line.
-    const completed = await runWithConcurrency(files, maxParallelUploads, async (file) => {
-      const item = addQueueItem(file);
+    const completed = await runWithConcurrency(files, maxParallelUploads, async (file, index) => {
+      const item = progressItems[index];
       try {
         const result = await submitWithRetry(file, item);
         item.detail.textContent = "Uploaded; waiting for the private album save…";

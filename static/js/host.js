@@ -76,28 +76,52 @@
     if (el) el.addEventListener('input', updatePreview);
   });
 
-  // cover photo preview
+  // Cover preview appears in both the upload control and the event card.
   const coverInput = qs('#coverPhotoUpload');
   const coverPreview = qs('#coverPhotoPreview');
+  const eventCoverPreview = qs('#previewCover');
+  let coverObjectUrl = null;
   if (coverInput) {
     coverInput.addEventListener('change', function () {
       const file = this.files && this.files[0];
+      if (coverObjectUrl) URL.revokeObjectURL(coverObjectUrl);
+      coverObjectUrl = null;
       if (!file) return;
-      const reader = new FileReader();
-      reader.onload = function (ev) {
-        coverPreview.innerHTML = `<img src="${ev.target.result}" alt="cover" style="width:100%;height:100%;object-fit:cover;">`;
-      };
-      reader.readAsDataURL(file);
+      if (!file.type.startsWith('image/')) {
+        toast('Choose an image file for the cover.');
+        coverInput.value = '';
+        return;
+      }
+      coverObjectUrl = URL.createObjectURL(file);
+      [coverPreview, eventCoverPreview].forEach((container) => {
+        if (!container) return;
+        container.replaceChildren();
+        const image = document.createElement('img');
+        image.src = coverObjectUrl;
+        image.alt = 'Event cover preview';
+        container.appendChild(image);
+      });
     });
   }
 
-  // theme color preview (add border/indicator)
+  // Apply the selected accent to the live event card.
+  function updateThemePreview(theme) {
+    const cover = qs('#previewCover');
+    const content = qs('.event-preview-card');
+    if (cover) {
+      cover.dataset.theme = theme;
+      cover.classList.remove('gold', 'purple', 'blue', 'coral');
+      if (theme !== 'emerald') cover.classList.add(theme);
+    }
+    if (content) content.dataset.theme = theme;
+  }
   qsa('input[name="theme_color"]').forEach(r => {
     r.addEventListener('change', function () {
-      // no heavy UI changes now; we could set background color
-      // (left minimal for CSS to manage)
+      if (this.checked) updateThemePreview(this.value);
     });
   });
+  const selectedTheme = qs('input[name="theme_color"]:checked');
+  if (selectedTheme) updateThemePreview(selectedTheme.value);
 
   // --- Form submit (AJAX) ---
   const form = qs('#createEventForm');
@@ -132,6 +156,14 @@
         if (resp.ok && data && data.success && data.event_code) {
           // success — open modal, show code, generate QR, set view album button
           const code = data.event_code;
+          const shareInstructions = qs('#shareInstructions');
+          if (shareInstructions) {
+            shareInstructions.textContent = data.privacy === 'private'
+              ? 'Share this private invitation link or QR code with invited guests. Anyone with the link can join.'
+              : 'Share the QR code or event code with your guests.';
+          }
+          const eventCodeLabel = qs('#eventCodeLabel');
+          if (eventCodeLabel && data.privacy === 'private') eventCodeLabel.textContent = 'Host reference';
           qs('#eventCodeDisplay').textContent = code;
           qs('#previewCode').textContent = code;
 
