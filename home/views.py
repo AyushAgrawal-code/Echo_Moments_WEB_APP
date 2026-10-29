@@ -11,6 +11,11 @@ def index(request):
     return render(request, "home/index.html")
 
 
+def health(request):
+    """Lightweight liveness endpoint for Render and external uptime monitors."""
+    return JsonResponse({"status": "ok"})
+
+
 
 
 # # def login(request):
