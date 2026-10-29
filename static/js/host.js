@@ -62,13 +62,21 @@
 
   // --- Live Preview updates ---
   function updatePreview() {
-    const title = qs('#eventName').value || 'Event Name';
-    const date = qs('#eventDate').value ? (new Date(qs('#eventDate').value)).toLocaleDateString() : 'Event Date';
-    const desc = qs('#eventDescription').value || 'Event description will appear here...';
+    const nameInput = qs('#eventName');
+    const dateInput = qs('#eventDate');
+    const descriptionInput = qs('#eventDescription');
+    const titlePreview = qs('#previewTitle');
+    const datePreview = qs('#previewDate');
+    const descriptionPreview = qs('#previewDescription');
+    if (!nameInput || !dateInput || !descriptionInput || !titlePreview || !datePreview || !descriptionPreview) return;
 
-    qs('#previewTitle').textContent = title;
-    qs('#previewDate').innerHTML = `<i class="far fa-calendar"></i> ${date}`;
-    qs('#previewDescription').textContent = desc;
+    const title = nameInput.value || 'Event Name';
+    const date = dateInput.value ? (new Date(dateInput.value)).toLocaleDateString() : 'Event Date';
+    const desc = descriptionInput.value || 'Event description will appear here...';
+
+    titlePreview.textContent = title;
+    datePreview.innerHTML = `<i class="far fa-calendar"></i> ${date}`;
+    descriptionPreview.textContent = desc;
   }
 
   ['#eventName','#eventDate','#eventDescription'].forEach(sel => {
