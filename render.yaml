@@ -13,6 +13,8 @@ services:
         generateValue: true
       - key: DEBUG
         value: "False"
+      - key: SECURE_SSL_REDIRECT
+        value: "False"
       - key: USE_S3
         value: "False"
       - key: USE_CLOUDINARY
