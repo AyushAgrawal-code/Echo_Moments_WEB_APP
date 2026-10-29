@@ -4,7 +4,7 @@ services:
     runtime: python
     plan: free
     buildCommand: pip install -r requirements-deploy.txt && python scripts/download_face_models.py && python manage.py collectstatic --noinput
-    startCommand: python manage.py migrate --noinput && python manage.py check_face_matching && python manage.py serve_demo
+    startCommand: python manage.py migrate --noinput && python manage.py configure_site && python manage.py check --deploy && python manage.py check_face_matching && python manage.py serve_demo
     healthCheckPath: /
     envVars:
       - key: PYTHON_VERSION
@@ -33,3 +33,21 @@ services:
         sync: false
       - key: FACE_MATCH_THRESHOLD
         value: "0.46"
+      - key: EMAIL_BACKEND
+        value: django.core.mail.backends.smtp.EmailBackend
+      - key: EMAIL_HOST
+        value: smtp.gmail.com
+      - key: EMAIL_PORT
+        value: "587"
+      - key: EMAIL_USE_TLS
+        value: "True"
+      - key: EMAIL_HOST_USER
+        sync: false
+      - key: EMAIL_HOST_PASSWORD
+        sync: false
+      - key: DEFAULT_FROM_EMAIL
+        sync: false
+      - key: GOOGLE_OAUTH_CLIENT_ID
+        sync: false
+      - key: GOOGLE_OAUTH_CLIENT_SECRET
+        sync: false
