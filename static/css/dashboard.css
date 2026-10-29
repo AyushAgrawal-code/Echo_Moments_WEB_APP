@@ -1101,6 +1101,52 @@ body {
   }
 }
 
+/* Keep action cards compact; let long feeds scroll inside their own cards. */
+.middle-section,
+.bottom-section {
+  align-items: start;
+}
+
+.quick-actions-card,
+.notifications-card,
+.activity-card {
+  align-self: start;
+  min-width: 0;
+}
+
+.middle-section > .quick-actions-card {
+  height: fit-content;
+}
+
+.notifications-card .notifications,
+.activity-card .activity-feed {
+  max-height: 24rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: var(--echo-emerald) rgba(29, 122, 95, 0.08);
+}
+
+.notifications-card .notifications::-webkit-scrollbar,
+.activity-card .activity-feed::-webkit-scrollbar {
+  width: 0.55rem;
+}
+
+.notifications-card .notifications::-webkit-scrollbar-thumb,
+.activity-card .activity-feed::-webkit-scrollbar-thumb {
+  border: 2px solid var(--echo-white);
+  border-radius: 999px;
+  background: var(--echo-emerald);
+}
+
+@media (max-width: 640px) {
+  .notifications-card .notifications,
+  .activity-card .activity-feed {
+    max-height: 20rem;
+  }
+}
+
 @media (max-width: 768px) {
   .stats-grid {
     grid-template-columns: minmax(0, 1fr);

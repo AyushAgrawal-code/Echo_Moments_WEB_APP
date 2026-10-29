@@ -54,7 +54,7 @@
     cameraButton.setAttribute("aria-pressed", String(cameraMode));
     uploadPanel.hidden = cameraMode;
     cameraPanel.hidden = !cameraMode;
-    fileInput.required = !cameraMode;
+    fileInput.required = false;
     cameraStatus.textContent = cameraMode
       ? "Select Enable camera to ask your browser for camera access. You can also use the upload option; many phones offer Take photo in the image picker."
       : "";
@@ -146,7 +146,10 @@
     }
   }
 
-  uploadButton.addEventListener("click", () => setMode("upload"));
+  uploadButton.addEventListener("click", () => {
+    if (currentMode !== "upload") setMode("upload");
+    fileInput.click();
+  });
   cameraButton.addEventListener("click", () => setMode("camera"));
   startCameraButton.addEventListener("click", () => {
     clearSelection();
@@ -178,7 +181,8 @@
     if (!file) {
       event.preventDefault();
       if (currentMode === "upload") {
-        fileInput.reportValidity();
+        cameraStatus.textContent = "Choose a selfie photo before continuing.";
+        uploadButton.focus();
       } else {
         cameraStatus.textContent = "Take a selfie or switch to Upload a selfie before continuing.";
         startCameraButton.focus();

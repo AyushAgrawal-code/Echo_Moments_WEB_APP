@@ -138,6 +138,11 @@ class Photo(models.Model):
     )
 
     image = models.ImageField(storage=PrivatePhotoStorage(), upload_to="event_photos/")
+    analysis_image = models.ImageField(
+        storage=PrivatePhotoStorage(), upload_to="event_analysis/", blank=True
+    )
+    face_embeddings_ciphertext = models.TextField(blank=True)
+    face_embedding_model_version = models.CharField(max_length=80, blank=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

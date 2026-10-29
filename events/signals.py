@@ -74,6 +74,7 @@ def _connect_private_file_cleanup(model, field_name):
 for _model_label, _field_name in (
     ("events.Event", "cover_photo"),
     ("events.Photo", "image"),
+    ("events.Photo", "analysis_image"),
     ("events.UploadJob", "source_file"),
     ("home.Event", "cover_photo"),
     ("accounts.UserProfile", "profile_pic"),

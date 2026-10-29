@@ -8,7 +8,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-```
 <title>Profile | EchoMoments</title>
 
 <link rel="stylesheet"
@@ -16,13 +15,11 @@
 
 <link rel="stylesheet"
       href="{% static 'css/profile.css' %}">
-```
 
 </head>
 
 <body>
 
-```
 <!-- =====================================================
      NAVIGATION
 ====================================================== -->
@@ -165,7 +162,12 @@
                            title="Change profile picture">
 
                         <i class="fas fa-camera"></i>
+                        <span class="sr-only">Choose and crop profile photo</span>
 
+                    </label>
+
+                    <label for="id_profile_pic" class="avatar-change-photo">
+                        Change / crop photo
                     </label>
 
                 </form>
@@ -692,6 +694,24 @@
 
 </main>
 
+<dialog id="avatarCropDialog" class="avatar-crop-dialog" aria-labelledby="avatarCropTitle">
+    <div class="avatar-crop-header">
+        <h2 id="avatarCropTitle">Adjust profile photo</h2>
+        <button type="button" id="closeAvatarCrop" class="avatar-crop-close" aria-label="Close photo crop">&times;</button>
+    </div>
+    <p class="avatar-crop-help">Drag the photo to position it. Use the slider to zoom in or out.</p>
+    <div id="avatarCropStage" class="avatar-crop-stage">
+        <img id="avatarCropPreview" alt="Profile photo crop preview">
+    </div>
+    <label class="avatar-zoom-control" for="avatarCropZoom">
+        <span>Zoom</span>
+        <input id="avatarCropZoom" type="range" min="1" max="3" step="0.01" value="1.45">
+    </label>
+    <div class="avatar-crop-actions">
+        <button type="button" id="cancelAvatarCrop" class="echo-button-outline">Cancel</button>
+        <button type="button" id="saveAvatarCrop" class="echo-button-primary">Use this photo</button>
+    </div>
+</dialog>
 
 <!-- =====================================================
      JAVASCRIPT
@@ -757,51 +777,6 @@
         }, 4000);
 
     }
-
-
-    // =================================================
-    // AUTO SUBMIT AVATAR
-    // =================================================
-
-    (function () {
-
-        const picInputId =
-            "id_profile_pic";
-
-
-        const picInput =
-            document.getElementById(picInputId);
-
-
-        if (picInput) {
-
-            picInput.addEventListener(
-                "change",
-                function () {
-
-                    if (!this.files || !this.files.length) {
-                        return;
-                    }
-
-
-                    const avatarForm =
-                        document.getElementById(
-                            "avatarForm"
-                        );
-
-
-                    if (avatarForm) {
-
-                        avatarForm.submit();
-
-                    }
-
-                }
-            );
-
-        }
-
-    })();
 
 
     // =================================================
@@ -887,7 +862,7 @@
 
 
 </script>
-```
+<script src="{% static 'js/profile_avatar_crop.js' %}" defer></script>
 
 </body>
 

@@ -32,4 +32,4 @@ services:
       - key: FACE_ENCRYPTION_KEY
         sync: false
       - key: FACE_MATCH_THRESHOLD
-        value: "0.5"
+        value: "0.46"

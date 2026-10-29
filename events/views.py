@@ -666,7 +666,7 @@ def download_photo(request, event_code, photo_id):
     return response
 
 
-def _my_photos_context(request, event, membership, face_error=""):
+def _my_photos_context(request, event, membership, face_error="", enrollment_error=""):
     match_queryset = FaceMatch.objects.filter(
         user=request.user,
         photo__event=event,
@@ -685,6 +685,10 @@ def _my_photos_context(request, event, membership, face_error=""):
         photo__event=event,
         status=FaceIndexJob.Status.FAILED,
     ).count()
+    face_scan_complete = FaceIndexJob.objects.filter(
+        photo__event=event,
+        status=FaceIndexJob.Status.COMPLETE,
+    ).count()
     return {
         "event": event,
         "membership": membership,
@@ -695,9 +699,12 @@ def _my_photos_context(request, event, membership, face_error=""):
         "matches_count": match_count,
         "pending_count": pending_count,
         "failed_count": failed_count,
+        "face_scan_complete": face_scan_complete,
+        "face_scan_total": face_scan_complete + pending_count + failed_count,
         "face_enrolled": _has_active_face_enrollment(membership),
         "is_host": _is_host(event, request.user),
         "face_error": face_error,
+        "enrollment_error": enrollment_error,
     }
 
 
@@ -711,12 +718,32 @@ def my_photos(request, event_code):
 
 
 @login_required
+def face_scan_status(request, event_code):
+    """Return aggregate progress for the current member's event photo scan."""
+    event = get_object_or_404(Event, event_code=event_code)
+    if not _membership(event, request.user) or not _can_view(event, request.user):
+        return JsonResponse({"error": "Event membership required."}, status=403)
+
+    counts = FaceIndexJob.objects.filter(photo__event=event).aggregate(
+        total=Count("pk"),
+        complete=Count("pk", filter=Q(status=FaceIndexJob.Status.COMPLETE)),
+        queued=Count("pk", filter=Q(status=FaceIndexJob.Status.QUEUED)),
+        processing=Count("pk", filter=Q(status=FaceIndexJob.Status.PROCESSING)),
+        failed=Count("pk", filter=Q(status=FaceIndexJob.Status.FAILED)),
+    )
+    response = JsonResponse(counts)
+    response["Cache-Control"] = "private, no-store"
+    return response
+
+
+@login_required
 @require_POST
 def enroll_face(request, event_code):
     event = get_object_or_404(Event, event_code=event_code)
     membership = _membership(event, request.user)
     if not membership or not _can_view(event, request.user):
         return HttpResponse("Active event membership required.", status=403)
+    is_replacing_template = _has_active_face_enrollment(membership)
     if request.POST.get("face_consent") != "on":
         messages.error(request, "Please agree before enabling face matching.")
         return redirect("events:my_photos", event_code=event.event_code)
@@ -738,8 +765,13 @@ def enroll_face(request, event_code):
         )
         return render(request, "events/my_photos.html", context, status=503)
     except (FaceEnrollmentError, ValidationError, UnidentifiedImageError, OSError, SyntaxError, Image.DecompressionBombError) as exc:
-        messages.error(request, str(exc) or "The selfie could not be read.")
-        return redirect("events:my_photos", event_code=event.event_code)
+        context = _my_photos_context(
+            request,
+            event,
+            membership,
+            enrollment_error=str(exc) or "The selfie could not be read.",
+        )
+        return render(request, "events/my_photos.html", context, status=400)
 
     now = timezone.now()
     with transaction.atomic():
@@ -770,7 +802,10 @@ def enroll_face(request, event_code):
                 batch.clear()
         if batch:
             FaceIndexJob.objects.bulk_create(batch, ignore_conflicts=True)
-    messages.success(request, "Face matching is on. Your event photos are being scanned; the selfie is not stored.")
+    if is_replacing_template:
+        messages.success(request, "Your face template was updated. Event photos are being rescanned; the new selfie is not stored.")
+    else:
+        messages.success(request, "Face matching is on. Your event photos are being scanned; the selfie is not stored.")
     return redirect("events:my_photos", event_code=event.event_code)
 
 
@@ -788,6 +823,15 @@ def revoke_face_enrollment(request, event_code):
         membership.face_model_version = ""
         membership.save(update_fields=["face_embedding_ciphertext", "face_consent_at", "face_model_version"])
         FaceMatch.objects.filter(user=request.user, photo__event=event).delete()
+        if not EventMember.objects.filter(
+            event=event,
+            is_active=True,
+            face_consent_at__isnull=False,
+        ).exclude(face_embedding_ciphertext="").exists():
+            Photo.objects.filter(event=event).update(
+                face_embeddings_ciphertext="",
+                face_embedding_model_version="",
+            )
     messages.success(request, "Face matching is off and your saved face template and suggestions were deleted.")
     return redirect("events:my_photos", event_code=event.event_code)
 

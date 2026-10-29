@@ -131,6 +131,148 @@
   color: #52655f;
 }
 
+.event-workflow input[type="file"].selfie-file-input {
+  display: none;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  clip-path: inset(50%);
+  border: 0;
+}
+
+.event-workflow .photo-download-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--echo-green, #19785f);
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.event-workflow .photo-action-button {
+  box-sizing: border-box;
+  width: 2.7rem;
+  height: 2.7rem;
+  justify-content: center;
+  padding: 0.55rem;
+  border: 1px solid var(--echo-border, #dbe2de);
+  border-radius: 0.65rem;
+  background: #fff;
+  cursor: pointer;
+  vertical-align: middle;
+}
+
+.event-workflow .photo-action-button:hover,
+.event-workflow .photo-action-button:focus-visible {
+  border-color: var(--echo-green, #19785f);
+  background: #eaf5f1;
+  text-decoration: none;
+}
+
+.event-workflow button.photo-action-button.delete-photo {
+  color: #72514e;
+}
+
+.event-workflow button.photo-action-button.delete-photo:hover,
+.event-workflow button.photo-action-button.delete-photo:focus-visible {
+  border-color: #ba5549;
+  background: #fff3f0;
+  color: #9c332a;
+}
+
+.event-workflow .photo-download-link:hover,
+.event-workflow .photo-download-link:focus-visible {
+  color: #125b49;
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+
+.event-workflow .photo-download-link svg {
+  width: 1.35rem;
+  height: 1.35rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.event-workflow .photo-action-button svg {
+  display: block;
+  width: 1.35rem;
+  height: 1.35rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.event-workflow .face-enrollment-error {
+  padding: 0.8rem 1rem;
+  border: 1px solid #e5aaa2;
+  border-radius: 0.65rem;
+  background: #fff2ef;
+  color: #822e25;
+}
+
+.event-workflow .face-scan-progress {
+  margin: 1rem 0;
+  padding: 1rem 1.25rem;
+}
+
+.event-workflow .face-scan-progress-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.35rem 1rem;
+}
+
+.event-workflow .face-scan-progress-heading span {
+  color: #52655f;
+  font-variant-numeric: tabular-nums;
+}
+
+.event-workflow #faceScanBar {
+  display: block;
+  width: 100%;
+  height: 0.8rem;
+  margin: 0.8rem 0 0.5rem;
+  overflow: hidden;
+  border: 0;
+  border-radius: 999px;
+  appearance: none;
+  background: #e6eee9;
+  accent-color: var(--echo-green, #19785f);
+}
+
+.event-workflow #faceScanBar::-webkit-progress-bar {
+  border-radius: 999px;
+  background: #e6eee9;
+}
+
+.event-workflow #faceScanBar::-webkit-progress-value {
+  border-radius: 999px;
+  background: var(--echo-green, #19785f);
+  transition: width 0.35s ease;
+}
+
+.event-workflow #faceScanBar::-moz-progress-bar {
+  border-radius: 999px;
+  background: var(--echo-green, #19785f);
+}
+
+.event-workflow .face-scan-progress p {
+  margin: 0;
+  color: #52655f;
+}
+
 .event-workflow .selfie-camera-stage {
   width: min(100%, 34rem);
   overflow: hidden;
@@ -263,9 +405,20 @@
   border-radius: 0.5rem;
 }
 
-.event-workflow #uploadQueue {
+.event-workflow #uploadQueue.upload-queue-list {
+  box-sizing: border-box;
+  height: 15rem;
+  max-height: 15rem;
+  margin: 0.75rem 0 0;
   padding-left: 1.25rem;
+  overflow-x: hidden;
+  overflow-y: auto;
   overflow-wrap: anywhere;
+  scrollbar-gutter: stable;
+}
+
+.event-workflow #uploadQueue.upload-queue-list li {
+  padding: 0.15rem 0.25rem 0.15rem 0;
 }
 
 .event-workflow #eventQRCode {
@@ -279,6 +432,80 @@
 
 .event-workflow #suggested-photos label {
   overflow-wrap: anywhere;
+}
+
+.event-workflow .photo-grid > .echo-card > .photo-preview-trigger {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  border-radius: 0.5rem;
+  background: #f1f2ef;
+}
+
+.event-workflow .photo-grid .photo-preview-trigger img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: cover;
+  transition: transform 180ms ease;
+}
+
+.event-workflow .photo-grid .photo-preview-trigger:hover img,
+.event-workflow .photo-grid .photo-preview-trigger:focus-visible img {
+  transform: scale(1.035);
+}
+
+.event-workflow .photo-lightbox {
+  position: fixed;
+  width: fit-content;
+  max-width: 94vw;
+  max-height: 94vh;
+  margin: auto;
+  padding: 2.75rem 0.75rem 0.75rem;
+  overflow: visible;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 0.9rem;
+  background: #111815;
+  box-shadow: 0 1.5rem 5rem rgba(0, 0, 0, 0.45);
+}
+
+.event-workflow .photo-lightbox::backdrop {
+  background: rgba(9, 16, 13, 0.78);
+  backdrop-filter: blur(3px);
+}
+
+.event-workflow .photo-lightbox img {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: min(90vw, 70rem);
+  max-height: 84vh;
+  object-fit: contain;
+  border-radius: 0.45rem;
+}
+
+.event-workflow .photo-lightbox-close {
+  position: absolute;
+  top: 0.55rem;
+  right: 0.55rem;
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 50%;
+  background: #25322c;
+  color: #fff;
+  font-size: 1.35rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.event-workflow .photo-lightbox-close:hover,
+.event-workflow .photo-lightbox-close:focus-visible {
+  background: #3a4c43;
 }
 
 @media (max-width: 520px) {
@@ -319,6 +546,16 @@
 
   .event-workflow .photo-grid > .echo-card {
     padding: 0.5rem;
+  }
+
+  .event-workflow .photo-lightbox {
+    max-width: 96vw;
+    padding: 2.5rem 0.4rem 0.4rem;
+  }
+
+  .event-workflow .photo-lightbox img {
+    max-width: 92vw;
+    max-height: 82vh;
   }
 
   .event-workflow .echo-button-primary,

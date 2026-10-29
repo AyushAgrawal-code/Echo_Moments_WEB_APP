@@ -29,6 +29,18 @@ class ProfileUpdateTests(TestCase):
 		self.user.refresh_from_db()
 		self.assertEqual(self.user.last_name, "UpdatedLastName")
 
+	def test_profile_page_offers_whatsapp_style_photo_crop_controls(self):
+		response = self.client.get(reverse("accounts:profile"))
+
+		self.assertEqual(response.status_code, 200)
+		self.assertContains(response, 'id="avatarCropStage"')
+		self.assertContains(response, 'id="avatarCropZoom"')
+		self.assertContains(response, 'id="saveAvatarCrop"')
+		self.assertContains(response, "Change / crop photo")
+		self.assertContains(response, 'id="cancelAvatarCrop"')
+		self.assertContains(response, "profile_avatar_crop.")
+		self.assertNotContains(response, "```")
+
 	def test_profile_photo_rejects_document_program_audio_and_video_files(self):
 		invalid_files = (
 			("profile.pdf", b"%PDF-1.7\nnot-an-image", "application/pdf"),

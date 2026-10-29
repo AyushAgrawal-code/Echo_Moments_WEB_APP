@@ -2,18 +2,22 @@ import time
 from datetime import timedelta
 
 from django.conf import settings
+from django.core.files.base import ContentFile
 from django.core.management.base import BaseCommand
 from django.db import close_old_connections, models, transaction
 from django.utils import timezone
 
 from events.face_matching import (
     FaceMatchingUnavailable,
+    create_analysis_image,
+    decrypt_face_embeddings,
     decrypt_embedding,
+    encrypt_face_embeddings,
     extract_face_embeddings,
     model_version,
     similarity,
 )
-from events.models import EventMember, FaceIndexJob, FaceMatch
+from events.models import EventMember, FaceIndexJob, FaceMatch, Photo
 
 
 class Command(BaseCommand):
@@ -113,9 +117,32 @@ class Command(BaseCommand):
             if members:
                 if not photo.image:
                     raise ValueError("The event photo is unavailable.")
-                with photo.image.open("rb") as source:
-                    image_bytes = source.read()
-                image_embeddings = extract_face_embeddings(image_bytes)
+                cached = (
+                    photo.face_embeddings_ciphertext
+                    and photo.face_embedding_model_version == model_version()
+                )
+                if cached:
+                    image_embeddings = decrypt_face_embeddings(photo.face_embeddings_ciphertext)
+                else:
+                    with photo.image.open("rb") as source:
+                        original_bytes = source.read()
+                    if photo.analysis_image:
+                        with photo.analysis_image.open("rb") as source:
+                            analysis_bytes = source.read()
+                    else:
+                        analysis_bytes = create_analysis_image(original_bytes)
+                        photo.analysis_image.save(f"face-scan-{photo.pk}.jpg", ContentFile(analysis_bytes), save=True)
+                    image_embeddings = extract_face_embeddings(
+                        analysis_bytes,
+                        source_image_bytes=original_bytes,
+                    )
+                    if not image_embeddings:
+                        # Preserve recall for distant faces missed at the smaller size.
+                        image_embeddings = extract_face_embeddings(original_bytes)
+                    Photo.objects.filter(pk=photo.pk).update(
+                        face_embeddings_ciphertext=encrypt_face_embeddings(image_embeddings),
+                        face_embedding_model_version=model_version(),
+                    )
                 threshold = float(getattr(settings, "FACE_MATCH_THRESHOLD", 0.5))
                 for member in members:
                     if member.face_model_version != model_version():

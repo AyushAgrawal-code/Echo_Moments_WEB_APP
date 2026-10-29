@@ -13,6 +13,7 @@ urlpatterns = [
     path("<str:event_code>/uploads/<uuid:job_id>/status/", views.upload_job_status, name="upload_job_status"),
     path("<str:event_code>/uploads/<uuid:job_id>/retry/", views.retry_upload_job, name="retry_upload_job"),
     path("<str:event_code>/my-photos/", views.my_photos, name="my_photos"),
+    path("<str:event_code>/my-photos/scan-status/", views.face_scan_status, name="face_scan_status"),
     path("<str:event_code>/my-photos/enroll/", views.enroll_face, name="enroll_face"),
     path("<str:event_code>/my-photos/revoke/", views.revoke_face_enrollment, name="revoke_face_enrollment"),
     path("<str:event_code>/my-photos/retry-scans/", views.retry_face_indexing, name="retry_face_indexing"),

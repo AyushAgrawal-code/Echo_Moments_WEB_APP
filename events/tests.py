@@ -19,6 +19,7 @@ from .face_matching import (
     FaceMatchingUnavailable,
     MAX_IMAGE_PIXELS,
     decrypt_embedding,
+    extract_enrollment_embedding,
     extract_face_embeddings,
     similarity,
 )
@@ -468,6 +469,7 @@ class FaceMatchingWorkflowTests(TestCase):
             self.skipTest(f"OpenCV models are unavailable in this test environment: {exc}")
         self.assertEqual(len(embeddings), 1)
         self.assertEqual(len(embeddings[0]), 128)
+        expected_enrollment_embedding = extract_enrollment_embedding(image_bytes)
 
         self.client.force_login(self.member)
         response = self.client.post(
@@ -483,7 +485,7 @@ class FaceMatchingWorkflowTests(TestCase):
         self.assertTrue(self.member_link.face_consent_at)
         self.assertTrue(self.member_link.face_embedding_ciphertext)
         recovered_embedding = decrypt_embedding(self.member_link.face_embedding_ciphertext)
-        self.assertAlmostEqual(similarity(embeddings[0], recovered_embedding), 1.0, places=5)
+        self.assertAlmostEqual(similarity(expected_enrollment_embedding, recovered_embedding), 1.0, places=5)
 
         photo = Photo.objects.create(
             event=self.event,
@@ -496,7 +498,8 @@ class FaceMatchingWorkflowTests(TestCase):
         )
 
         match = FaceMatch.objects.get(photo=photo, user=self.member)
-        self.assertAlmostEqual(match.similarity, 1.0, places=5)
+        self.assertGreaterEqual(match.similarity, 0.5)
+        self.assertLessEqual(match.similarity, 1.0)
         self.assertFalse(FaceMatch.objects.filter(photo=photo, user__in=[self.host, self.unenrolled]).exists())
         self.assertEqual(Photo.objects.filter(event=self.event).count(), 1)
         self.assertIn("synthetic-event.png", photo.image.name)
@@ -560,6 +563,8 @@ class FaceMatchingWorkflowTests(TestCase):
         response = self.client.get(reverse("events:my_photos", args=[self.event.event_code]))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["matches_count"], 1)
+        self.assertContains(response, "Update your selfie")
+        self.assertContains(response, 'name="selfie"')
         self.assertEqual(response.context["match_page"].paginator.per_page, 20)
         paged_response = self.client.get(
             reverse("events:my_photos", args=[self.event.event_code]), {"page_size": 50}
