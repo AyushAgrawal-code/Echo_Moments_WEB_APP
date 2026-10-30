@@ -70,40 +70,26 @@ def _validate_face_image_dimensions(image_bytes):
     return width, height
 
 
-def extract_face_embeddings(image_bytes, source_image_bytes=None):
-    """Detect on an analysis copy and align faces from the original when supplied."""
-    width, height = _validate_face_image_dimensions(image_bytes)
+def extract_face_embeddings(image_bytes):
+    """Detect and align faces on a bounded analysis image to limit peak RAM."""
+    _validate_face_image_dimensions(image_bytes)
     try:
         import numpy as np
     except ImportError as exc:
         raise FaceMatchingUnavailable("Install numpy to enable face matching.") from exc
+
     cv2, detector, recognizer = _models()
-    image = cv2.imdecode(np.frombuffer(image_bytes, dtype=np.uint8), cv2.IMREAD_COLOR)
+    encoded = np.frombuffer(image_bytes, dtype=np.uint8)
+    image = cv2.imdecode(encoded, cv2.IMREAD_COLOR)
+    del encoded
     if image is None:
         raise FaceEnrollmentError("The image could not be decoded.")
+
     decoded_height, decoded_width = image.shape[:2]
     if decoded_width * decoded_height > MAX_IMAGE_PIXELS:
         raise FaceEnrollmentError("Images larger than 30 megapixels aren't supported for face matching.")
     if decoded_width < MIN_FACE_IMAGE_SIDE or decoded_height < MIN_FACE_IMAGE_SIDE:
         raise FaceEnrollmentError("Use a larger, clearer photo for face matching.")
-
-    source_image = image
-    scale_x = scale_y = 1.0
-    if source_image_bytes is not None:
-        source_width, source_height = _validate_face_image_dimensions(source_image_bytes)
-        try:
-            with Image.open(BytesIO(source_image_bytes)) as source:
-                oriented_source = ImageOps.exif_transpose(source).convert("RGB")
-                source_image = cv2.cvtColor(np.asarray(oriented_source), cv2.COLOR_RGB2BGR)
-        except (UnidentifiedImageError, OSError, Image.DecompressionBombError) as exc:
-            raise FaceEnrollmentError("The original photo could not be decoded.") from exc
-        actual_height, actual_width = source_image.shape[:2]
-        if actual_width * actual_height > MAX_IMAGE_PIXELS:
-            raise FaceEnrollmentError("Images larger than 30 megapixels aren't supported for face matching.")
-        # EXIF orientation can rotate dimensions, so use the actual oriented
-        # array dimensions rather than the encoded header dimensions.
-        scale_x = actual_width / decoded_width
-        scale_y = actual_height / decoded_height
 
     detector.setInputSize((decoded_width, decoded_height))
     _, detections = detector.detect(image)
@@ -112,10 +98,7 @@ def extract_face_embeddings(image_bytes, source_image_bytes=None):
 
     vectors = []
     for detection in detections:
-        original_detection = detection.astype(np.float32, copy=True)
-        original_detection[[0, 2, 4, 6, 8, 10, 12]] *= scale_x
-        original_detection[[1, 3, 5, 7, 9, 11, 13]] *= scale_y
-        aligned = recognizer.alignCrop(source_image, original_detection)
+        aligned = recognizer.alignCrop(image, detection)
         feature = np.asarray(recognizer.feature(aligned), dtype=np.float32).reshape(-1)
         norm = float(np.linalg.norm(feature))
         if norm:
@@ -144,15 +127,11 @@ def create_analysis_image(image_bytes):
 
 
 def extract_enrollment_embedding(image_bytes):
-    # Large source dimensions can make YuNet miss a face even when it is clear.
-    # Use the same analysis size as event scans first, then retry the original
-    # if the resized image is ambiguous or has no detection.
+    # Enrollment uses the same bounded analysis size as event-photo indexing
+    # so a large phone selfie cannot trigger a full-resolution OpenCV decode.
     analysis_bytes = create_analysis_image(image_bytes)
-    embeddings = extract_face_embeddings(analysis_bytes, source_image_bytes=image_bytes)
-    if len(embeddings) != 1:
-        full_resolution_embeddings = extract_face_embeddings(image_bytes)
-        if len(full_resolution_embeddings) == 1:
-            embeddings = full_resolution_embeddings
+    embeddings = extract_face_embeddings(analysis_bytes)
+    del analysis_bytes
     if len(embeddings) != 1:
         if not embeddings:
             raise FaceEnrollmentError("We couldn't detect a face in that selfie. Try a clear, front-facing photo with good lighting.")
