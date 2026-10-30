@@ -8,6 +8,8 @@ from django.conf import settings
 from django.core.files.storage import FileSystemStorage, Storage
 from django.utils.deconstruct import deconstructible
 
+from cloudinary.exceptions import NotFound
+
 
 @deconstructible
 class CloudinaryPrivateStorage(Storage):
@@ -103,10 +105,8 @@ class CloudinaryPrivateStorage(Storage):
                 type=self.delivery_type,
             )
             return True
-        except Exception as exc:
-            if getattr(exc, "http_status", None) == 404:
-                return False
-            raise
+        except NotFound:
+            return False
 
     def size(self, name):
         api, _, _ = self._sdk()
