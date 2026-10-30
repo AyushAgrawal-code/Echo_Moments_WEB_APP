@@ -264,8 +264,8 @@ STATICFILES_DIRS =[
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-FACE_DETECTOR_MODEL = os.environ.get("FACE_DETECTOR_MODEL", str(BASE_DIR / "models" / "face_detection_yunet_2023mar.onnx"))
-FACE_RECOGNIZER_MODEL = os.environ.get("FACE_RECOGNIZER_MODEL", str(BASE_DIR / "models" / "face_recognition_sface_2021dec.onnx"))
+FACE_DETECTOR_MODEL = os.environ.get("FACE_DETECTOR_MODEL") or str(BASE_DIR / "models" / "face_detection_yunet_2023mar.onnx")
+FACE_RECOGNIZER_MODEL = os.environ.get("FACE_RECOGNIZER_MODEL") or str(BASE_DIR / "models" / "face_recognition_sface_2021dec.onnx")
 FACE_MODEL_VERSION = os.environ.get("FACE_MODEL_VERSION", "opencv-yunet-2023mar-sface-2021dec-v1")
 FACE_MATCH_THRESHOLD = float(os.environ.get("FACE_MATCH_THRESHOLD", "0.46"))
 
@@ -287,4 +287,3 @@ EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
 EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
 EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "true").lower() in ("1", "true", "yes")
 DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "EchoMoments <noreply@localhost>")
-
