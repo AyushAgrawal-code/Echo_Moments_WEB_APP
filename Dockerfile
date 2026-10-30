@@ -25,4 +25,6 @@ RUN python scripts/download_face_models.py \
 
 EXPOSE 8000
 
-CMD ["sh", "-c", "python manage.py migrate --noinput && python manage.py configure_site && python manage.py check --deploy && python manage.py check_face_matching && python manage.py serve_demo --host 0.0.0.0 --port ${PORT:-8000}"]
+# Run migrations and deployment checks before starting the Waitress server.
+# The repository does not define a configure_site management command.
+CMD ["sh", "-c", "python manage.py migrate --noinput && python manage.py check --deploy && python manage.py check_face_matching && python manage.py serve_demo --host 0.0.0.0 --port ${PORT:-8000}"]
