@@ -255,6 +255,8 @@
 <!-- Toast container -->
 <div class="toast-container" id="toastContainer"></div>
 
+{% endblock body %}
+
 {% block extra_js %}
 <script>
   window.ECHO = {
@@ -264,7 +266,4 @@
 </script>
 <script src="{% static 'js/qrcode.min.js' %}"></script>
 <script src="{% static 'js/host.js' %}"></script>
-
 {% endblock %}
-
-{% endblock body %}
