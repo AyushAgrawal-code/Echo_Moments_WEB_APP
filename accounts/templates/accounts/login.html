@@ -167,25 +167,6 @@
      {% block extra_js %}
 <script src="{% static 'js/auth.js' %}" defer></script>
 {% endblock %}
-<script>
-  document.addEventListener('DOMContentLoaded', function () {
-    const togglePasswordButtons = document.querySelectorAll('.toggle-password');
-
-    togglePasswordButtons.forEach(button => {
-      button.addEventListener('click', function () {
-        const input = this.parentNode.querySelector('input[type="password"], input[type="text"]');
-        const icon = this.querySelector('i');
-
-        const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
-        input.setAttribute('type', type);
-
-        icon.classList.toggle('fa-eye');
-        icon.classList.toggle('fa-eye-slash');
-      });
-    });
-  });
-</script>
-
 
     <!-- {% endblock body %} -->
            <!-- Footer -->
