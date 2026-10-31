@@ -208,11 +208,17 @@ class GoogleAuthAdapterTests(TestCase):
 
 		self.adapter.pre_social_login(request, social_login)
 
+		# After pre_social_login, the sociallogin.user should point to
+		# the existing user (is_existing == True because user has a pk).
 		self.assertTrue(social_login.is_existing)
 		self.assertEqual(social_login.user.pk, user.pk)
+		# _did_authenticate_by_email should be set for allauth AUTO_CONNECT.
+		self.assertEqual(social_login._did_authenticate_by_email, "existing@example.com")
+		# Password must NOT be wiped.
 		user.refresh_from_db()
 		self.assertTrue(user.has_usable_password())
 		self.assertTrue(user.check_password("MyPassword123!"))
+		# A verified EmailAddress must exist.
 		self.assertTrue(EmailAddress.objects.filter(user=user, email="existing@example.com", verified=True).exists())
 
 	def test_new_user_gets_populated_with_google_email_and_username(self):
