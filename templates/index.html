@@ -14,14 +14,18 @@
     <meta name="description" content="Collect, organize, and share photographs from your special events with event albums and QR code access." />
     <meta name="author" content="EchoMoments" />
 
+    <meta property="og:site_name" content="EchoMoments" />
     <meta property="og:title" content="EchoMoments" />
     <meta property="og:description" content="Capture & Share Your Event Memories" />
     <meta property="og:type" content="website" />
-    <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+    <meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{% static 'images/og-image.png' %}" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
 
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@echo_moments" />
-    <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+    <meta name="twitter:title" content="EchoMoments" />
+    <meta name="twitter:description" content="Capture & Share Your Event Memories" />
+    <meta name="twitter:image" content="{{ request.scheme }}://{{ request.get_host }}{% static 'images/og-image.png' %}" />
 
     {% comment %} {% block extra_css %}{% endblock extra_css %} {% endcomment %}
 
