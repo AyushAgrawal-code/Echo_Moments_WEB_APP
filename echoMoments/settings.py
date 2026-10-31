@@ -290,11 +290,15 @@ LOGIN_REDIRECT_URL = '/accounts/dashboard/'
 LOGOUT_REDIRECT_URL = '/accounts/login/'
 ACCOUNT_LOGOUT_REDIRECT_URL = '/accounts/login/'
 
-# Local password-reset messages print to the runserver console. Deployments can
-# configure an SMTP provider using environment variables; credentials stay out
-# of source control.
+# Email configuration:
+# Render Free Tier blocks outbound SMTP traffic on ports 25, 465, and 587.
+# Therefore, when BREVO_API_KEY is present, we automatically use the HTTPS API
+# backend (accounts.email_backends.BrevoEmailBackend) which operates over port 443.
+BREVO_API_KEY = os.environ.get("BREVO_API_KEY", "")
 EMAIL_BACKEND = os.environ.get("EMAIL_BACKEND") or (
-    "django.core.mail.backends.console.EmailBackend" if DEBUG else "django.core.mail.backends.smtp.EmailBackend",
+    "accounts.email_backends.BrevoEmailBackend"
+    if BREVO_API_KEY
+    else ("django.core.mail.backends.console.EmailBackend" if DEBUG else "django.core.mail.backends.smtp.EmailBackend")
 )
 EMAIL_HOST = os.environ.get("EMAIL_HOST", "")
 EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
@@ -302,5 +306,4 @@ EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
 EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
 EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "true").lower() in ("1", "true", "yes")
 DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "EchoMoments <noreply@localhost>")
-BREVO_API_KEY = os.environ.get("BREVO_API_KEY", "")
 
