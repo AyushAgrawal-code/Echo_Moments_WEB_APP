@@ -1,5 +1,6 @@
 import logging
 
+from allauth.account.adapter import get_adapter as get_account_adapter
 from allauth.account.models import EmailAddress
 from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
 from django.contrib.auth import get_user_model
@@ -116,13 +117,12 @@ class CustomSocialAccountAdapter(DefaultSocialAccountAdapter):
 
     def populate_user(self, request, sociallogin, data):
         user = super().populate_user(request, sociallogin, data)
-        email = data.get("email") or ""
+        email = (data.get("email") or "").lower().strip()
         if email:
-            email = email.lower().strip()
             user.email = email
             if not user.username:
                 if not User.objects.filter(username__iexact=email).exists():
                     user.username = email
                 else:
-                    user.username = self.generate_unique_username([email, "user"])
+                    user.username = get_account_adapter().generate_unique_username([email, "user"])
         return user
