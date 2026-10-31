@@ -11,7 +11,6 @@ from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.core.mail.backends.base import BaseEmailBackend
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -30,8 +29,10 @@ class BrevoEmailBackend(BaseEmailBackend):
             return 0
         api_key = getattr(settings, "BREVO_API_KEY", "")
         if not api_key:
+            logger.error(
+                "Brevo email backend cannot send email: BREVO_API_KEY is not set in environment variables."
+            )
             if self.fail_silently:
-                logger.error("Brevo email backend is missing its API key.")
                 return 0
             raise ImproperlyConfigured("Set BREVO_API_KEY to send email through Brevo.")
 
@@ -42,9 +43,9 @@ class BrevoEmailBackend(BaseEmailBackend):
             try:
                 self._send(message, api_key)
             except (BrevoEmailBackendError, URLError, TimeoutError) as exc:
+                logger.error("Brevo could not accept a transactional email: %s", exc)
                 if not self.fail_silently:
                     raise
-                logger.warning("Brevo could not accept a transactional email: %s", exc.__class__.__name__)
             else:
                 sent += 1
         return sent
@@ -53,6 +54,13 @@ class BrevoEmailBackend(BaseEmailBackend):
         from_name, from_email = parseaddr(message.from_email or settings.DEFAULT_FROM_EMAIL)
         if not from_email:
             raise ImproperlyConfigured("DEFAULT_FROM_EMAIL must contain a valid sender email address.")
+
+        if "localhost" in from_email or "@example." in from_email:
+            logger.warning(
+                "DEFAULT_FROM_EMAIL is currently '%s'. Brevo requires a real, verified sender email "
+                "(configured in Brevo -> Senders & IPs -> Senders).",
+                from_email,
+            )
 
         payload = {
             "sender": {"name": from_name or "EchoMoments", "email": from_email},
@@ -102,8 +110,14 @@ class BrevoEmailBackend(BaseEmailBackend):
                     raise BrevoEmailBackendError(f"Brevo returned HTTP {response.status}.")
                 response.read()
         except HTTPError as exc:
-            raise BrevoEmailBackendError(f"Brevo returned HTTP {exc.code}.") from None
+            try:
+                error_body = exc.read().decode("utf-8", "replace")
+            except Exception:
+                error_body = ""
+            logger.error("Brevo API error (HTTP %s): %s", exc.code, error_body)
+            raise BrevoEmailBackendError(f"Brevo returned HTTP {exc.code}: {error_body}") from None
         except URLError as exc:
+            logger.error("Could not connect to Brevo email API: %s", exc)
             raise BrevoEmailBackendError("Could not connect to Brevo's email API.") from exc
 
     @staticmethod

@@ -35,13 +35,19 @@ class CustomSocialAccountAdapter(DefaultSocialAccountAdapter):
         extra_context=None,
     ):
         provider_name = getattr(provider, "name", getattr(provider, "id", str(provider)))
+        session_keys = list(request.session.keys()) if request and hasattr(request, "session") else []
+        cookies = list(request.COOKIES.keys()) if request and hasattr(request, "COOKIES") else []
+        has_sessionid = "sessionid" in cookies
         logger.error(
-            "OAuth authentication error for provider [%s]: error=%s, exception=%r, extra_context=%s, GET=%s",
+            "OAuth authentication error for provider [%s]: error=%s, exception=%r, extra_context=%s, GET=%s, "
+            "has_sessionid_cookie=%s, session_keys=%s",
             provider_name,
             error,
             exception,
             extra_context,
             dict(request.GET.items()) if request else {},
+            has_sessionid,
+            session_keys,
             exc_info=exception,
         )
         super().on_authentication_error(
