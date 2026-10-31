@@ -41,7 +41,7 @@ class CloudinaryPrivateStorage(Storage):
     def _format(self, name):
         return PurePosixPath(str(name)).suffix.lstrip(".").lower()
 
-    def _signed_url(self, name, expires_in=300):
+    def _signed_url(self, name, expires_in=300, attachment=False):
         api, uploader, utils = self._sdk()
         image_format = self._format(name)
         if not image_format:
@@ -52,6 +52,7 @@ class CloudinaryPrivateStorage(Storage):
             resource_type=self.resource_type,
             type=self.delivery_type,
             expires_at=int(time.time()) + expires_in,
+            attachment=attachment,
         )
 
     def _open(self, name, mode="rb"):
@@ -63,12 +64,9 @@ class CloudinaryPrivateStorage(Storage):
     def _save(self, name, content):
         _, uploader, _ = self._sdk()
         content.seek(0)
-        payload = content.read()
-        if not payload:
-            raise ValueError("Cannot store an empty image.")
         image_format = self._format(name)
         result = uploader.upload(
-            io.BytesIO(payload),
+            content,
             public_id=self._public_id(name),
             resource_type=self.resource_type,
             type=self.delivery_type,

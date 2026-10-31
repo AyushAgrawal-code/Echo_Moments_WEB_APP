@@ -16,7 +16,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument("--once", action="store_true", help="Process available jobs, then exit.")
-        parser.add_argument("--poll-seconds", type=float, default=1.0)
+        parser.add_argument("--poll-seconds", type=float, default=2.0)
         parser.add_argument("--guest-wait-seconds", type=int, default=30)
         parser.add_argument("--stale-after-seconds", type=int, default=300)
         parser.add_argument("--failed-retention-days", type=int, default=30)
@@ -203,7 +203,32 @@ class Command(BaseCommand):
             self._retry_or_fail(job, str(exc))
 
     def _copy_staged_object(self, job, photo):
-        """Copy between private S3 prefixes server-side when they share a bucket."""
+        """Move or copy between private storage prefixes server-side."""
+        if getattr(settings, "USE_CLOUDINARY", False):
+            try:
+                from events.storage import CloudinaryPrivateStorage
+                source_storage = job.source_file.storage
+                dest_storage = photo.image.storage
+                if isinstance(source_storage, CloudinaryPrivateStorage) and isinstance(dest_storage, CloudinaryPrivateStorage):
+                    _, uploader, _ = CloudinaryPrivateStorage._sdk()
+                    from_public_id = source_storage._public_id(job.source_file.name)
+                    extension = Path(job.original_name).suffix.lower() or ".jpg"
+                    destination_name = f"event_photos/{uuid.uuid4().hex}{extension}"
+                    to_public_id = dest_storage._public_id(destination_name)
+                    uploader.rename(
+                        from_public_id,
+                        to_public_id,
+                        resource_type="image",
+                        type="authenticated",
+                        to_type="authenticated",
+                        overwrite=True,
+                    )
+                    photo.image.name = destination_name
+                    return True
+            except Exception as exc:
+                self.stderr.write(f"Cloudinary rename optimization failed, falling back to copy: {exc}")
+                return False
+
         if not getattr(settings, "USE_S3", False):
             return False
 

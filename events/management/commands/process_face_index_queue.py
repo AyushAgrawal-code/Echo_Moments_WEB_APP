@@ -25,7 +25,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument("--once", action="store_true")
-        parser.add_argument("--poll-seconds", type=float, default=2.0)
+        parser.add_argument("--poll-seconds", type=float, default=3.0)
         parser.add_argument("--stale-after-seconds", type=int, default=300)
         parser.add_argument("--retry-failed", action="store_true", help="Requeue failed jobs, e.g. after installing face models.")
 
@@ -128,19 +128,12 @@ class Command(BaseCommand):
                         with photo.analysis_image.open("rb") as source:
                             analysis_bytes = source.read()
                     else:
-                        # Decode the original only when we need to create the
-                        # cached analysis copy. Do not retain full-resolution
-                        # bytes while OpenCV processes the resized image.
                         with photo.image.open("rb") as source:
                             original_bytes = source.read()
                         analysis_bytes = create_analysis_image(original_bytes)
                         del original_bytes
                         photo.analysis_image.save(f"face-scan-{photo.pk}.jpg", ContentFile(analysis_bytes), save=True)
 
-                    # Detection and alignment both use the bounded analysis
-                    # image. Decoding the original again created multiple
-                    # full-resolution RGB/BGR buffers and could exhaust the
-                    # Render Free instance's memory.
                     image_embeddings = extract_face_embeddings(analysis_bytes)
                     del analysis_bytes
                     Photo.objects.filter(pk=photo.pk).update(
@@ -183,6 +176,15 @@ class Command(BaseCommand):
                     updated_at=now,
                 )
             self.stdout.write(f"Indexed face suggestions for photo {photo.pk}.")
+            del matches
+            del image_embeddings
+            import gc
+            gc.collect()
+            try:
+                import ctypes
+                ctypes.CDLL('libc.so.6').malloc_trim(0)
+            except Exception:
+                pass
         except FaceMatchingUnavailable as exc:
             self._retry_or_fail(job, str(exc), generation, retry_delay=300)
             self.stderr.write(str(exc))

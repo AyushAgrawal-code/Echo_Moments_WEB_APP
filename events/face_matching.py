@@ -12,9 +12,9 @@ from PIL import Image, UnidentifiedImageError
 from PIL import ImageOps
 
 
-MAX_IMAGE_PIXELS = 30_000_000
+MAX_IMAGE_PIXELS = 15_000_000
 MIN_FACE_IMAGE_SIDE = 80
-MAX_FACE_SCAN_EDGE = 1920
+MAX_FACE_SCAN_EDGE = 1024
 
 
 class FaceMatchingUnavailable(RuntimeError):
@@ -45,7 +45,7 @@ def _models():
     try:
         import cv2
     except ImportError as exc:
-        raise FaceMatchingUnavailable("Install opencv-contrib-python-headless to enable face matching.") from exc
+        raise FaceMatchingUnavailable("Install opencv-python-headless to enable face matching.") from exc
 
     if not hasattr(cv2, "FaceDetectorYN") or not hasattr(cv2, "FaceRecognizerSF"):
         raise FaceMatchingUnavailable("The installed OpenCV build does not include YuNet/SFace support.")
@@ -66,7 +66,7 @@ def _validate_face_image_dimensions(image_bytes):
     if width < MIN_FACE_IMAGE_SIDE or height < MIN_FACE_IMAGE_SIDE:
         raise FaceEnrollmentError("Use a larger, clearer photo for face matching.")
     if width * height > MAX_IMAGE_PIXELS:
-        raise FaceEnrollmentError("Images larger than 30 megapixels aren't supported for face matching.")
+        raise FaceEnrollmentError("Images larger than 15 megapixels aren't supported for face matching.")
     return width, height
 
 
@@ -87,7 +87,7 @@ def extract_face_embeddings(image_bytes):
 
     decoded_height, decoded_width = image.shape[:2]
     if decoded_width * decoded_height > MAX_IMAGE_PIXELS:
-        raise FaceEnrollmentError("Images larger than 30 megapixels aren't supported for face matching.")
+        raise FaceEnrollmentError("Images larger than 15 megapixels aren't supported for face matching.")
     if decoded_width < MIN_FACE_IMAGE_SIDE or decoded_height < MIN_FACE_IMAGE_SIDE:
         raise FaceEnrollmentError("Use a larger, clearer photo for face matching.")
 
@@ -120,7 +120,7 @@ def create_analysis_image(image_bytes):
             else:
                 image = image.convert("RGB")
             output = BytesIO()
-            image.save(output, format="JPEG", quality=88, optimize=True)
+            image.save(output, format="JPEG", quality=85, optimize=True)
             return output.getvalue()
     except (UnidentifiedImageError, OSError, Image.DecompressionBombError) as exc:
         raise FaceEnrollmentError("The event photo could not be prepared for face matching.") from exc

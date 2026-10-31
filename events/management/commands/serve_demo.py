@@ -28,7 +28,7 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument("--host", default="0.0.0.0")
         parser.add_argument("--port", type=int, default=int(os.environ.get("PORT", "8000")))
-        parser.add_argument("--threads", type=int, default=4)
+        parser.add_argument("--threads", type=int, default=int(os.environ.get("WAITRESS_THREADS", "2")))
 
     def handle(self, *args, **options):
         try:
@@ -51,7 +51,7 @@ class Command(BaseCommand):
             application,
             host=options["host"],
             port=options["port"],
-            threads=max(2, options["threads"]),
-            connection_limit=100,
+            threads=max(1, options["threads"]),
+            connection_limit=50,
             channel_timeout=30,
         )

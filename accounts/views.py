@@ -12,7 +12,7 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.utils.timezone import now
 from django.http import JsonResponse
-from django.http import FileResponse, HttpResponse
+from django.http import FileResponse, HttpResponse, HttpResponseRedirect
 import mimetypes
 import os
 from django.db.models import Count, Q
@@ -388,6 +388,8 @@ def profile_photo(request):
     profile = getattr(request.user, "profile", None)
     if not profile or not profile.profile_pic:
         return HttpResponse("Profile photo not found.", status=404)
+    if getattr(settings, "USE_CLOUDINARY", False) or getattr(settings, "USE_S3", False):
+        return HttpResponseRedirect(profile.profile_pic.url)
     response = FileResponse(
         profile.profile_pic.open("rb"),
         as_attachment=False,

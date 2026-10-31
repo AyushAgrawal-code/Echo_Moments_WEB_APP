@@ -9,6 +9,12 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.12.10
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      - key: MALLOC_ARENA_MAX
+        value: "2"
+      - key: WAITRESS_THREADS
+        value: "2"
       - key: SECRET_KEY
         generateValue: true
       - key: DEBUG

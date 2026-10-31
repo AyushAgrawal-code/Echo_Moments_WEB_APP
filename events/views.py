@@ -12,7 +12,7 @@ from django.core.exceptions import ValidationError
 from django.db.models import Count, Q, F
 from PIL import Image, UnidentifiedImageError
 from django.db import IntegrityError, transaction
-from django.http import JsonResponse, HttpResponse, FileResponse
+from django.http import JsonResponse, HttpResponse, FileResponse, HttpResponseRedirect
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -678,6 +678,8 @@ def view_photo(request, event_code, photo_id):
     if not image_info:
         return HttpResponse("Photo is unavailable.", status=404)
     content_type, extension = image_info
+    if getattr(settings, "USE_CLOUDINARY", False) or getattr(settings, "USE_S3", False):
+        return HttpResponseRedirect(photo.image.url)
     response = FileResponse(
         photo.image.open("rb"),
         as_attachment=False,
@@ -700,6 +702,8 @@ def view_event_cover(request, event_code):
     if not image_info:
         return HttpResponse("Cover photo is unavailable.", status=404)
     content_type, extension = image_info
+    if getattr(settings, "USE_CLOUDINARY", False) or getattr(settings, "USE_S3", False):
+        return HttpResponseRedirect(event.cover_photo.url)
     response = FileResponse(
         event.cover_photo.open("rb"),
         as_attachment=False,
@@ -725,6 +729,12 @@ def download_photo(request, event_code, photo_id):
     if not image_info:
         return HttpResponse("Photo is unavailable.", status=404)
     content_type, extension = image_info
+    if getattr(settings, "USE_CLOUDINARY", False):
+        storage = photo.image.storage
+        if hasattr(storage, "_signed_url"):
+            signed_url = storage._signed_url(photo.image.name, expires_in=300, attachment=True)
+            return HttpResponseRedirect(signed_url)
+        return HttpResponseRedirect(photo.image.url)
     response = FileResponse(
         photo.image.open("rb"),
         as_attachment=True,
@@ -968,8 +978,8 @@ def download_my_photos(request, event_code):
             return HttpResponse("Selected photos must be visible matches in your album.", status=403)
     else:
         photos = visible_matches.order_by("uploaded_at", "pk")
-    archive = tempfile.SpooledTemporaryFile(max_size=8 * 1024 * 1024, mode="w+b")
-    with zipfile.ZipFile(archive, mode="w", compression=zipfile.ZIP_STORED) as zipped:
+    archive = tempfile.NamedTemporaryFile(mode="w+b", suffix=".zip")
+    with zipfile.ZipFile(archive, mode="w", compression=zipfile.ZIP_DEFLATED) as zipped:
         for photo in photos:
             if not photo.image:
                 continue
