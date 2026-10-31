@@ -211,7 +211,13 @@ SITE_ID = 1
 ACCOUNT_LOGIN_METHODS = {"email"}
 ACCOUNT_SIGNUP_FIELDS = ["email*", "password1*", "password2*"]
 ACCOUNT_USER_MODEL_USERNAME_FIELD = "username"
+ACCOUNT_EMAIL_VERIFICATION = "none"
+SOCIALACCOUNT_ADAPTER = "accounts.adapters.CustomSocialAccountAdapter"
+SOCIALACCOUNT_AUTO_SIGNUP = True
 SOCIALACCOUNT_LOGIN_ON_GET = False
+SOCIALACCOUNT_EMAIL_AUTHENTICATION = True
+SOCIALACCOUNT_EMAIL_AUTHENTICATION_AUTO_CONNECT = True
+SOCIALACCOUNT_EMAIL_VERIFICATION = "none"
 SOCIALACCOUNT_PROVIDERS = {
     "google": {
         "SCOPE": ["profile", "email"],
@@ -245,6 +251,7 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+WHITENOISE_MANIFEST_STRICT = False
 STORAGES = {
     "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
     "staticfiles": {
@@ -277,9 +284,10 @@ FACE_MATCH_THRESHOLD = float(os.environ.get("FACE_MATCH_THRESHOLD", "0.46"))
 
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
-LOGIN_URL = '/accounts/auth/'
-LOGIN_REDIRECT_URL = '/'   # after login (if you use django auth views later)
-LOGOUT_REDIRECT_URL = '/accounts/auth/'
+LOGIN_URL = '/accounts/login/'
+LOGIN_REDIRECT_URL = '/accounts/dashboard/'
+LOGOUT_REDIRECT_URL = '/accounts/login/'
+ACCOUNT_LOGOUT_REDIRECT_URL = '/accounts/login/'
 
 # Local password-reset messages print to the runserver console. Deployments can
 # configure an SMTP provider using environment variables; credentials stay out

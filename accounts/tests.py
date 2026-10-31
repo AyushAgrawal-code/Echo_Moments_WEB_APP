@@ -183,3 +183,52 @@ class AccountAuthenticationTests(TestCase):
 		self.assertRedirects(complete, reverse("accounts:password_reset_complete"))
 		user.refresh_from_db()
 		self.assertTrue(user.check_password("New-Unique-Passphrase-643!"))
+
+
+class GoogleAuthAdapterTests(TestCase):
+	def setUp(self):
+		from django.test import RequestFactory
+		from accounts.adapters import CustomSocialAccountAdapter
+		self.factory = RequestFactory()
+		self.adapter = CustomSocialAccountAdapter()
+
+	def test_existing_user_with_same_email_is_auto_connected_and_password_retained(self):
+		from allauth.socialaccount.models import SocialAccount, SocialLogin
+		from allauth.account.models import EmailAddress
+		user = User.objects.create_user(
+			username="existing@example.com",
+			email="existing@example.com",
+			password="MyPassword123!",
+		)
+		request = self.factory.get("/")
+		social_account = SocialAccount(provider="google", uid="google-uid-12345")
+		social_account.extra_data = {"email": "existing@example.com", "name": "Existing User"}
+		social_login = SocialLogin(account=social_account)
+		social_login.user = User()
+
+		self.adapter.pre_social_login(request, social_login)
+
+		self.assertTrue(social_login.is_existing)
+		self.assertEqual(social_login.user.pk, user.pk)
+		user.refresh_from_db()
+		self.assertTrue(user.has_usable_password())
+		self.assertTrue(user.check_password("MyPassword123!"))
+		self.assertTrue(EmailAddress.objects.filter(user=user, email="existing@example.com", verified=True).exists())
+
+	def test_new_user_gets_populated_with_google_email_and_username(self):
+		from allauth.socialaccount.models import SocialAccount, SocialLogin
+		request = self.factory.get("/")
+		social_account = SocialAccount(provider="google", uid="google-uid-67890")
+		social_login = SocialLogin(account=social_account)
+		social_login.user = User()
+
+		user = self.adapter.populate_user(
+			request,
+			social_login,
+			{"email": "newuser@example.com", "first_name": "New", "last_name": "User"},
+		)
+		self.assertEqual(user.email, "newuser@example.com")
+		self.assertEqual(user.username, "newuser@example.com")
+		self.assertEqual(user.first_name, "New")
+		self.assertEqual(user.last_name, "User")
+
