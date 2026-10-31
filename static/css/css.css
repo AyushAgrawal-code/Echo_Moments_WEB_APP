@@ -232,9 +232,18 @@ body {
 /* Photo Grid */
 .photo-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 13.5rem), 1fr));
   gap: 1rem;
   margin-top: 2rem;
+  justify-content: start;
+}
+
+.photo-grid > .echo-card,
+.photo-grid > .photo-item {
+  min-width: 0;
+  max-width: 18rem;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .photo-item {
@@ -494,6 +503,11 @@ body {
 @media (max-width: 480px) {
   .photo-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .photo-grid > .echo-card,
+  .photo-grid > .photo-item {
+    max-width: 100%;
   }
   
   .modal-content {
