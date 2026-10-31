@@ -14,7 +14,7 @@ services:
       - key: MALLOC_ARENA_MAX
         value: "2"
       - key: WAITRESS_THREADS
-        value: "2"
+        value: "4"
       - key: SECRET_KEY
         generateValue: true
       - key: DEBUG

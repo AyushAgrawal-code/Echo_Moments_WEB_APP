@@ -72,3 +72,22 @@ class ProfileSettingsForm(forms.ModelForm):
             "auto_share_photos",
             "allow_event_invites",
         ]
+
+
+from django.contrib.auth.forms import PasswordResetForm
+
+
+class CustomPasswordResetForm(PasswordResetForm):
+    """
+    Password reset form that sends reset links to any active user account,
+    even if the user previously only signed in via Google OAuth (unusable password).
+    """
+
+    def get_users(self, email):
+        email_field_name = User.get_email_field_name()
+        return list(
+            User.objects.filter(**{
+                f"{email_field_name}__iexact": email,
+                "is_active": True,
+            })
+        )

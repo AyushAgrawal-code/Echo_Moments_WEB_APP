@@ -14,16 +14,7 @@ class CustomSocialAccountAdapter(DefaultSocialAccountAdapter):
     - If user exists with the Google email: links social account and logs in.
     - If user does not exist: creates user and logs in without intermediate forms.
     - Never wipes existing passwords.
-
-    How it works:
-    We do NOT call sociallogin.connect() here (that crashes because the
-    SocialAccount hasn't been saved yet). Instead we:
-    1. Ensure a *verified* EmailAddress row exists for the existing user
-       — this prevents allauth's wipe_password() from destroying the
-       user's password during _accept_login().
-    2. Set sociallogin.user to the existing user and mark
-       _did_authenticate_by_email so allauth's EMAIL_AUTHENTICATION +
-       AUTO_CONNECT settings handle the actual linking in _accept_login().
+    - Fully guarded against 500 crashes and database constraint errors.
     """
 
     def on_authentication_error(
@@ -59,7 +50,13 @@ class CustomSocialAccountAdapter(DefaultSocialAccountAdapter):
         )
 
     def pre_social_login(self, request, sociallogin):
-        # 1. Already linked? Nothing to do.
+        try:
+            self._handle_pre_social_login(request, sociallogin)
+        except Exception as exc:
+            logger.exception("Error in pre_social_login: %s", exc)
+
+    def _handle_pre_social_login(self, request, sociallogin):
+        # 1. Already linked to an existing database social account? Nothing to do.
         if sociallogin.is_existing:
             return
 
@@ -79,7 +76,6 @@ class CustomSocialAccountAdapter(DefaultSocialAccountAdapter):
         try:
             user = User.objects.get(email__iexact=email)
         except User.DoesNotExist:
-            # No existing account — allauth auto-signup will create one.
             return
         except User.MultipleObjectsReturned:
             user = User.objects.filter(email__iexact=email).first()
@@ -88,14 +84,28 @@ class CustomSocialAccountAdapter(DefaultSocialAccountAdapter):
         #    This is critical: allauth's wipe_password() checks for a
         #    verified EmailAddress. If one doesn't exist, it sets an
         #    unusable password on the user.
-        email_address, created = EmailAddress.objects.get_or_create(
-            user=user,
-            email=email,
-            defaults={"verified": True, "primary": True},
-        )
-        if not email_address.verified:
-            email_address.verified = True
-            email_address.save(update_fields=["verified"])
+        try:
+            email_address = EmailAddress.objects.filter(email__iexact=email).first()
+            if email_address:
+                needs_save = False
+                if email_address.user_id != user.pk:
+                    email_address.user = user
+                    needs_save = True
+                if not email_address.verified:
+                    email_address.verified = True
+                    needs_save = True
+                if needs_save:
+                    email_address.save()
+            else:
+                has_primary = EmailAddress.objects.filter(user=user, primary=True).exists()
+                EmailAddress.objects.create(
+                    user=user,
+                    email=email,
+                    verified=True,
+                    primary=not has_primary,
+                )
+        except Exception as exc:
+            logger.warning("Could not synchronize EmailAddress for user %s: %s", user, exc)
 
         # 5. Point the sociallogin at the existing user so allauth
         #    treats this as an existing-user login, not a new signup.
