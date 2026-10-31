@@ -134,8 +134,10 @@
   // --- Form submit (AJAX) ---
   const form = qs('#createEventForm');
   if (form) {
+    let isSubmitting = false;
     form.addEventListener('submit', async function (e) {
       e.preventDefault();
+      if (isSubmitting) return;
 
       // Basic validation
       const name = qs('#eventName').value.trim();
@@ -145,6 +147,16 @@
         showStep(1);
         return;
       }
+
+      const submitBtn = form.querySelector('button[type="submit"]');
+      const originalText = submitBtn ? submitBtn.innerHTML : 'Create Event';
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.style.opacity = '0.75';
+        submitBtn.style.cursor = 'not-allowed';
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating event...';
+      }
+      isSubmitting = true;
 
       const fd = new FormData(form);
 
@@ -255,11 +267,25 @@
           // server returned success=false or missing event_code
           const err = (data && data.error) ? data.error : 'Server error while creating event.';
           toast(err);
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.style.opacity = '';
+            submitBtn.style.cursor = '';
+            submitBtn.innerHTML = originalText;
+          }
         }
 
       } catch (err) {
         console.error(err);
         toast('Network or server error.');
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.style.opacity = '';
+          submitBtn.style.cursor = '';
+          submitBtn.innerHTML = originalText;
+        }
+      } finally {
+        isSubmitting = false;
       }
     });
   }

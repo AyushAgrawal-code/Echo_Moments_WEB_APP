@@ -246,8 +246,33 @@ signinButtons.forEach(button => {
   });}
   if(join_button){join_button.addEventListener("click", function(){
     window.location.href = '/#join';
-  
   });}
 
+  // Prevent multiple rapid clicks on standard form submits
+  document.querySelectorAll('form').forEach(function(form) {
+    if (form.id === 'createEventForm' || form.classList.contains('auth-form')) return;
+    form.addEventListener('submit', function (e) {
+      const submitBtn = form.querySelector('button[type="submit"], button:not([type])');
+      if (!submitBtn) return;
+      if (submitBtn.disabled) {
+        e.preventDefault();
+        return;
+      }
+      if (form.checkValidity && !form.checkValidity()) return;
+      setTimeout(() => {
+        submitBtn.disabled = true;
+        submitBtn.style.opacity = '0.75';
+      }, 0);
+    });
+  });
+
 });
+
+window.addEventListener('pageshow', function () {
+  document.querySelectorAll('button[type="submit"], button:not([type])').forEach(function(btn) {
+    btn.disabled = false;
+    btn.style.opacity = '';
+  });
+});
+
 
