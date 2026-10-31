@@ -1,7 +1,10 @@
+import logging
+
 from allauth.account.models import EmailAddress
 from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
 from django.contrib.auth import get_user_model
 
+logger = logging.getLogger(__name__)
 User = get_user_model()
 
 
@@ -22,6 +25,32 @@ class CustomSocialAccountAdapter(DefaultSocialAccountAdapter):
        _did_authenticate_by_email so allauth's EMAIL_AUTHENTICATION +
        AUTO_CONNECT settings handle the actual linking in _accept_login().
     """
+
+    def on_authentication_error(
+        self,
+        request,
+        provider,
+        error=None,
+        exception=None,
+        extra_context=None,
+    ):
+        provider_name = getattr(provider, "name", getattr(provider, "id", str(provider)))
+        logger.error(
+            "OAuth authentication error for provider [%s]: error=%s, exception=%r, extra_context=%s, GET=%s",
+            provider_name,
+            error,
+            exception,
+            extra_context,
+            dict(request.GET.items()) if request else {},
+            exc_info=exception,
+        )
+        super().on_authentication_error(
+            request,
+            provider,
+            error=error,
+            exception=exception,
+            extra_context=extra_context,
+        )
 
     def pre_social_login(self, request, sociallogin):
         # 1. Already linked? Nothing to do.

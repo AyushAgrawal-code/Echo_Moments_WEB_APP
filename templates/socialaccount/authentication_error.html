@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Sign In Error · EchoMoments{% endblock %}
+{% block body %}
+<main class="echo-container account-form-page">
+  <section class="echo-card account-form-card" style="text-align: center;">
+    <p class="eyebrow">Google Sign In</p>
+    <h1>Sign in could not be completed</h1>
+    <p style="color: #64748b; margin-bottom: 1.5rem;">
+      OAuth login requests are temporary and can only be used once. If you refreshed the page or the login session timed out, please start again from the sign-in page.
+    </p>
+
+    {% if auth_error.exception %}
+      <div class="alert alert-error" role="alert" style="text-align: left; margin-bottom: 1.5rem; font-size: 0.85rem; word-break: break-all;">
+        <strong>Error detail:</strong> {{ auth_error.exception }}
+      </div>
+    {% endif %}
+
+    <div style="display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">
+      <a href="{% url 'accounts:login' %}" class="echo-button echo-button-primary">
+        Go to Sign In
+      </a>
+    </div>
+  </section>
+</main>
+{% endblock %}
